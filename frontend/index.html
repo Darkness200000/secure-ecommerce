@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SecureShop — Trusted Electronics Store</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div id="navbar"></div>
+
+  <!-- Hero -->
+  <section class="hero">
+    <h1>Shop Electronics <span>Securely</span></h1>
+    <p>Premium smartphones, laptops, headphones & more — protected by military-grade security.</p>
+    <a href="/pages/products.html" class="btn-hero">Shop Now</a>
+  </section>
+
+  <!-- Features -->
+  <section class="section" style="background:white;">
+    <div class="container">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:32px;text-align:center;">
+        <div>
+          <div style="font-size:2.5rem;margin-bottom:12px;">🔐</div>
+          <h3 style="margin-bottom:8px;">MFA Protected</h3>
+          <p style="color:#777;font-size:.9rem;">Two-factor login keeps your account safe from unauthorized access.</p>
+        </div>
+        <div>
+          <div style="font-size:2.5rem;margin-bottom:12px;">💳</div>
+          <h3 style="margin-bottom:8px;">Secure Payments</h3>
+          <p style="color:#777;font-size:.9rem;">PCI-DSS compliant gateway. We never store your card details.</p>
+        </div>
+        <div>
+          <div style="font-size:2.5rem;margin-bottom:12px;">🔒</div>
+          <h3 style="margin-bottom:8px;">Encrypted Data</h3>
+          <p style="color:#777;font-size:.9rem;">All data encrypted with SSL/TLS. Passwords hashed with bcrypt.</p>
+        </div>
+        <div>
+          <div style="font-size:2.5rem;margin-bottom:12px;">🚚</div>
+          <h3 style="margin-bottom:8px;">Fast Delivery</h3>
+          <p style="color:#777;font-size:.9rem;">Free shipping on orders over $500. Delivered in 3–5 days.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Featured Products -->
+  <section class="section">
+    <div class="container">
+      <h2 class="section-title">Featured Products</h2>
+      <p class="section-subtitle">Top picks from our electronics collection</p>
+      <div class="product-grid" id="featured-products">
+        <div class="spinner"></div>
+      </div>
+      <div style="text-align:center;margin-top:36px;">
+        <a href="/pages/products.html" class="btn-hero">View All Products</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <p>© 2025 <span>SecureShop</span> — Secure E-Commerce Project | Built with Node.js, MySQL & ❤️</p>
+  </footer>
+
+  <script src="/js/cart.js"></script>
+  <script src="/js/api.js"></script>
+  <script>
+    renderNavbar();
+
+    async function loadFeatured() {
+      try {
+        const res  = await fetch("/api/products");
+        const data = await res.json();
+        const grid = document.getElementById("featured-products");
+        const featured = data.slice(0, 4);
+        if (!featured.length) { grid.innerHTML = '<p class="empty-state">No products found.</p>'; return; }
+        grid.innerHTML = featured.map(p => `
+          <div class="product-card" onclick="window.location='/pages/products.html'">
+            <img src="${p.image_url || 'https://via.placeholder.com/400x200?text=No+Image'}" alt="${p.name}" loading="lazy" />
+            <div class="card-body">
+              <span class="category">${p.category}</span>
+              <h3>${p.name}</h3>
+              <p style="color:#777;font-size:.85rem;margin:6px 0 12px;">${p.description ? p.description.slice(0,80)+'…' : ''}</p>
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span class="price">$${parseFloat(p.price).toFixed(2)}</span>
+                <span style="font-size:.8rem;color:#28a745;">In Stock (${p.stock})</span>
+              </div>
+              <button class="btn-add" onclick="event.stopPropagation();addToCart({id:${p.id},name:'${p.name.replace(/'/g,"\\'")}',price:${p.price},image_url:'${p.image_url||''}'})">
+                🛒 Add to Cart
+              </button>
+            </div>
+          </div>`).join("");
+      } catch (e) {
+        document.getElementById("featured-products").innerHTML = '<p style="color:red">Failed to load products.</p>';
+      }
+    }
+    loadFeatured();
+  </script>
+</body>
+</html>

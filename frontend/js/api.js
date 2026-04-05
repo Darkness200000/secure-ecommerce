@@ -1,4 +1,4 @@
-const API = "/api"; // relative — works both locally and on server
+const API_BASE = 'https://secure-ecommerce-production.up.railway.app'
 
 // ── Token helpers ──────────────────────────────────────────
 function getToken()   { return localStorage.getItem("token"); }

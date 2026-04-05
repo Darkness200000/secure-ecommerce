@@ -1,4 +1,4 @@
-const API_BASE = 'https://secure-ecommerce-production.up.railway.app'
+const API = 'https://secure-ecommerce-production.up.railway.app'
 
 // ── Token helpers ──────────────────────────────────────────
 function getToken()   { return localStorage.getItem("token"); }

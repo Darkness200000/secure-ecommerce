@@ -4,18 +4,18 @@ const helmet = require("helmet");
 const cors = require("cors");
 const session = require("express-session");
 const path = require("path");
-
 const authRoutes    = require("./routes/authRoutes");
 const productRoutes = require("./routes/productRoutes");
 const orderRoutes   = require("./routes/orderRoutes");
 const adminRoutes   = require("./routes/adminRoutes");
 
 const app = express();
+app.set('trust proxy', 1); // ← FIXED: trust Railway's proxy
 
 // ── Security headers ──────────────────────────────────────────
 app.use(
   helmet({
-    contentSecurityPolicy: false, // allow inline scripts in HTML pages
+    contentSecurityPolicy: false,
   })
 );
 
@@ -31,7 +31,7 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ── Session (used only during MFA OTP window) ─────────────────
+// ── Session ───────────────────────────────────────────────────
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "dev_session_secret",
@@ -40,7 +40,7 @@ app.use(
     cookie: {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      maxAge: 10 * 60 * 1000, // 10 minutes
+      maxAge: 10 * 60 * 1000,
     },
   })
 );
@@ -54,7 +54,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/orders",   orderRoutes);
 app.use("/api/admin",    adminRoutes);
 
-// ── Catch-all: serve index.html for any non-API route ─────────
+// ── Catch-all ─────────────────────────────────────────────────
 app.get("*", (req, res) => {
   if (!req.path.startsWith("/api")) {
     res.sendFile(path.join(__dirname, "../frontend/index.html"));

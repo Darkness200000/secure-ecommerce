@@ -3,7 +3,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 exports.sendOTPEmail = async (toEmail, userName, otp) => {
   await resend.emails.send({
-    from: 'SecureShop <onboarding@resend.dev>',
+    from: 'SecureShop <noreply@secure-shop.store>',
     to: toEmail,
     subject: 'Your SecureShop Login OTP',
     html: `

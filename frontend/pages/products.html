@@ -11,12 +11,16 @@
 
   <section class="section">
     <div class="container">
-      <h2 class="section-title">All Products</h2>
-      <p class="section-subtitle">Browse our full range of electronics</p>
+      <div class="section-header reveal">
+        <div>
+          <h2 class="section-title">All Products</h2>
+          <p class="section-subtitle">Browse our full range of electronics</p>
+        </div>
+        <span id="product-count" style="font-size:.875rem;color:var(--text-3);font-weight:500;"></span>
+      </div>
 
-      <!-- Filters -->
-      <div class="filter-bar">
-        <input type="text" id="search" placeholder="🔍 Search products…" oninput="filterProducts()"/>
+      <div class="filter-bar reveal">
+        <input type="text" id="search" placeholder="🔍  Search products…" oninput="filterProducts()"/>
         <select id="category" onchange="filterProducts()">
           <option value="">All Categories</option>
           <option value="Smartphones">Smartphones</option>
@@ -34,7 +38,17 @@
       </div>
 
       <div class="product-grid" id="product-grid">
-        <div class="spinner"></div>
+        <!-- Skeleton loaders -->
+        ${[...Array(8)].map(() => `
+          <div style="border-radius:20px;overflow:hidden;border:1px solid var(--border);">
+            <div class="skeleton" style="height:210px;border-radius:0;"></div>
+            <div style="padding:16px;">
+              <div class="skeleton" style="height:10px;width:40%;margin-bottom:10px;"></div>
+              <div class="skeleton" style="height:14px;width:80%;margin-bottom:8px;"></div>
+              <div class="skeleton" style="height:12px;width:60%;margin-bottom:16px;"></div>
+              <div class="skeleton" style="height:38px;border-radius:999px;"></div>
+            </div>
+          </div>`).join('')}
       </div>
     </div>
   </section>
@@ -43,71 +57,103 @@
     <p>© 2025 <span>SecureShop</span> — All rights reserved</p>
   </footer>
 
+  <div class="toast-container" id="toast-container"></div>
+
   <script src="/js/cart.js"></script>
   <script src="/js/api.js"></script>
   <script>
     let allProducts = [];
-
     renderNavbar();
+
+    // Scroll reveal
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }});
+    }, { threshold: 0.08 });
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // Navbar scroll
+    window.addEventListener('scroll', () => {
+      document.querySelector('.navbar')?.classList.toggle('scrolled', window.scrollY > 20);
+    });
+
+    function showToast(msg, type = '') {
+      const c = document.getElementById('toast-container');
+      const t = document.createElement('div');
+      t.className = `toast ${type}`;
+      t.textContent = msg;
+      c.appendChild(t);
+      setTimeout(() => { t.classList.add('hiding'); setTimeout(() => t.remove(), 300); }, 2500);
+    }
+
+    // Ripple
+    document.addEventListener('click', e => {
+      const btn = e.target.closest('.btn-add');
+      if (!btn || btn.disabled) return;
+      const r = document.createElement('span');
+      const rect = btn.getBoundingClientRect();
+      const size = Math.max(rect.width, rect.height);
+      r.className = 'ripple-effect';
+      r.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px;`;
+      btn.appendChild(r);
+      setTimeout(() => r.remove(), 500);
+    });
 
     async function loadProducts() {
       try {
-        const res  = await fetch("/api/products");
+        const res = await fetch('/api/products');
         allProducts = await res.json();
         renderGrid(allProducts);
       } catch {
-        document.getElementById("product-grid").innerHTML =
-          '<p style="color:red">Failed to load products. Make sure the server is running.</p>';
+        document.getElementById('product-grid').innerHTML =
+          '<p style="color:red;grid-column:1/-1">Failed to load products.</p>';
       }
     }
 
     function filterProducts() {
-      const search   = document.getElementById("search").value.toLowerCase();
-      const category = document.getElementById("category").value;
-      const sort     = document.getElementById("sort").value;
-
+      const search   = document.getElementById('search').value.toLowerCase();
+      const category = document.getElementById('category').value;
+      const sort     = document.getElementById('sort').value;
       let filtered = allProducts.filter(p => {
-        const matchSearch   = p.name.toLowerCase().includes(search) || (p.description||"").toLowerCase().includes(search);
-        const matchCategory = !category || p.category === category;
-        return matchSearch && matchCategory;
+        const ms = p.name.toLowerCase().includes(search) || (p.description||'').toLowerCase().includes(search);
+        const mc = !category || p.category === category;
+        return ms && mc;
       });
-
-      if (sort === "price-asc")  filtered.sort((a,b) => a.price - b.price);
-      if (sort === "price-desc") filtered.sort((a,b) => b.price - a.price);
-      if (sort === "name")       filtered.sort((a,b) => a.name.localeCompare(b.name));
-
+      if (sort === 'price-asc')  filtered.sort((a,b) => a.price - b.price);
+      if (sort === 'price-desc') filtered.sort((a,b) => b.price - a.price);
+      if (sort === 'name')       filtered.sort((a,b) => a.name.localeCompare(b.name));
       renderGrid(filtered);
     }
 
     function renderGrid(products) {
-      const grid = document.getElementById("product-grid");
+      const grid = document.getElementById('product-grid');
+      document.getElementById('product-count').textContent = `${products.length} products`;
       if (!products.length) {
         grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="icon">🔍</div><p>No products found.</p></div>`;
         return;
       }
-      grid.innerHTML = products.map(p => `
-        <div class="product-card">
-          <img src="${p.image_url || 'https://via.placeholder.com/400x200?text=No+Image'}"
-               alt="${p.name}" loading="lazy"/>
+      grid.innerHTML = products.map((p, i) => `
+        <div class="product-card reveal" style="animation-delay:${(i % 8) * 0.06}s">
+          <div class="product-card-img">
+            <img src="${p.image_url || 'https://placehold.co/400x300?text=No+Image'}" alt="${p.name}" loading="lazy"/>
+            ${p.stock <= 5 && p.stock > 0 ? `<span class="card-badge low">Only ${p.stock} left</span>` : ''}
+          </div>
           <div class="card-body">
-            <span class="category">${p.category || "General"}</span>
+            <span class="category">${p.category || 'General'}</span>
             <h3>${p.name}</h3>
-            <p style="color:#777;font-size:.85rem;margin:6px 0 12px;min-height:40px;">
-              ${p.description ? p.description.slice(0,80)+"…" : ""}
-            </p>
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <p class="desc">${p.description ? p.description.slice(0,80)+'…' : ''}</p>
+            <div class="card-footer">
               <span class="price">$${parseFloat(p.price).toFixed(2)}</span>
-              <span style="font-size:.8rem;color:${p.stock > 5 ? '#28a745' : '#ffc107'};">
-                ${p.stock > 5 ? `In Stock (${p.stock})` : p.stock > 0 ? `Only ${p.stock} left!` : "Out of Stock"}
+              <span class="stock-badge ${p.stock > 5 ? 'stock-in' : p.stock > 0 ? 'stock-low' : 'stock-out'}">
+                ${p.stock > 5 ? '● In Stock' : p.stock > 0 ? `● ${p.stock} left` : '● Out'}
               </span>
             </div>
-            <button class="btn-add" ${p.stock === 0 ? "disabled" : ""}
-              onclick="addToCart({id:${p.id},name:'${p.name.replace(/'/g,"\\'")}',price:${p.price},image_url:'${p.image_url||''}'})"
-            >
-              ${p.stock === 0 ? "Out of Stock" : "🛒 Add to Cart"}
+            <button class="btn-add" ${p.stock === 0 ? 'disabled' : ''}
+              onclick="addToCart({id:${p.id},name:'${p.name.replace(/'/g,"\\'")}',price:${p.price},image_url:'${p.image_url||''}'}); showToast('Added to cart ✓', 'success'); renderNavbar();">
+              ${p.stock === 0 ? 'Out of Stock' : '🛒 Add to Cart'}
             </button>
           </div>
-        </div>`).join("");
+        </div>`).join('');
+      grid.querySelectorAll('.reveal').forEach(el => observer.observe(el));
     }
 
     loadProducts();

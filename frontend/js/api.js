@@ -1,4 +1,4 @@
-const API = 'https://secure-shop.store/api'
+const API = 'https://www.secure-shop.store/api'
 
 // ── Token helpers ──────────────────────────────────────────
 function getToken()   { return localStorage.getItem("token"); }

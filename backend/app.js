@@ -8,30 +8,33 @@ const authRoutes    = require("./routes/authRoutes");
 const productRoutes = require("./routes/productRoutes");
 const orderRoutes   = require("./routes/orderRoutes");
 const adminRoutes   = require("./routes/adminRoutes");
+const mediaRoutes   = require("./routes/mediaRoutes");
 
 const app = express();
-app.set('trust proxy', 1); // ← FIXED: trust Railway's proxy
+app.set("trust proxy", 1);
 
-// ── Security headers ──────────────────────────────────────────
+// ── Security headers ──────────────────────────────────────
 app.use(
   helmet({
     contentSecurityPolicy: false,
   })
 );
 
-// ── CORS ──────────────────────────────────────────────────────
+// ── CORS ──────────────────────────────────────────────────
 app.use(
   cors({
     origin: process.env.CLIENT_URL || "http://localhost:5000",
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-// ── Body parsers ──────────────────────────────────────────────
+// ── Body parsers ──────────────────────────────────────────
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ── Session ───────────────────────────────────────────────────
+// ── Session ───────────────────────────────────────────────
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "dev_session_secret",
@@ -40,28 +43,30 @@ app.use(
     cookie: {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
+      sameSite: "none",
       maxAge: 10 * 60 * 1000,
     },
   })
 );
 
-// ── Serve frontend ────────────────────────────────────────────
+// ── Serve frontend ────────────────────────────────────────
 app.use(express.static(path.join(__dirname, "../frontend")));
 
-// ── API routes ────────────────────────────────────────────────
+// ── API routes ────────────────────────────────────────────
 app.use("/api/auth",     authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/orders",   orderRoutes);
 app.use("/api/admin",    adminRoutes);
+app.use("/api/media",    mediaRoutes);
 
-// ── Catch-all ─────────────────────────────────────────────────
+// ── Catch-all ─────────────────────────────────────────────
 app.get("*", (req, res) => {
   if (!req.path.startsWith("/api")) {
     res.sendFile(path.join(__dirname, "../frontend/index.html"));
   }
 });
 
-// ── Global error handler ──────────────────────────────────────
+// ── Global error handler ──────────────────────────────────
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(err.status || 500).json({ error: err.message || "Internal Server Error" });

@@ -373,115 +373,128 @@
 
   // ── Products ──────────────────────────────────────────────
   async function loadProducts() {
+  const tbody = document.getElementById("products-body");
+  tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;">
+    <div class="spinner" style="margin:0 auto;width:28px;height:28px;"></div>
+  </td></tr>`;
+
+  try {
     const res  = await fetch("/api/products");
     const data = await res.json();
 
-    // Load media counts for each product
-    const mediaCountsPromises = data.map(p =>
-      fetch(`/api/media/${p.id}`).then(r => r.json()).catch(() => [])
-    );
-    const mediaCounts = await Promise.all(mediaCountsPromises);
+    if (!data.length) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:#a3a3a3;">No products yet.</td></tr>`;
+      return;
+    }
 
-    document.getElementById("products-body").innerHTML = data.map((p, i) => {
-      const media = mediaCounts[i] || [];
-      const images = media.filter(m => m.type === "image");
-      const videos = media.filter(m => m.type === "video");
-      return `
-        <tr>
-          <td>#${p.id}</td>
-          <td>
-            <img src="${p.image_url || 'https://placehold.co/48x48?text=?'}"
-              style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid #e5e5e5;"/>
-          </td>
-          <td><strong>${p.name}</strong></td>
-          <td>${p.category}</td>
-          <td>$${parseFloat(p.price).toFixed(2)}</td>
-          <td>${p.stock}</td>
-          <td>
-            <div class="product-media-cell">
-              ${images.slice(0,2).map(m => `<img src="${m.url}" onerror="this.src='https://placehold.co/36x36?text=?'"/>`).join("")}
-              ${images.length > 0 ? `<span class="media-count-badge">📷 ${images.length}</span>` : ""}
-              ${videos.length > 0 ? `<span class="media-count-badge">🎬 ${videos.length}</span>` : ""}
-              ${media.length === 0 ? `<span style="color:#a3a3a3;font-size:.78rem;">None</span>` : ""}
-            </div>
-          </td>
-          <td><button class="btn-sm btn-danger" onclick="deleteProduct(${p.id})">Delete</button></td>
-        </tr>`;
-    }).join("");
+    tbody.innerHTML = data.map(p => `
+      <tr>
+        <td>#${p.id}</td>
+        <td>
+          <img src="${p.image_url || 'https://placehold.co/48x48?text=?'}"
+            style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid #e5e5e5;"
+            onerror="this.src='https://placehold.co/48x48?text=?'"/>
+        </td>
+        <td><strong>${p.name}</strong></td>
+        <td>${p.category}</td>
+        <td>$${parseFloat(p.price).toFixed(2)}</td>
+        <td>${p.stock}</td>
+        <td>
+          <button class="btn-sm" style="background:#f0f0f0;color:#525252;"
+            onclick="viewMedia(${p.id})">📷 Media</button>
+        </td>
+        <td>
+          <button class="btn-sm btn-danger" onclick="deleteProduct(${p.id})">Delete</button>
+        </td>
+      </tr>`).join("");
+
+  } catch(err) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:red;">
+      Failed to load: ${err.message}
+    </td></tr>`;
+  }
+}
+
+async function viewMedia(productId) {
+  try {
+    const res   = await fetch(`/api/media/${productId}`);
+    const media = await res.json();
+    if (!media.length) { alert("No extra media added for this product."); return; }
+    const list = media.map(m => `${m.type.toUpperCase()}: ${m.url}`).join("\n");
+    alert(`Media for product #${productId}:\n\n${list}`);
+  } catch {
+    alert("Failed to load media.");
+  }
+}
+
+async function addProduct() {
+  const al    = document.getElementById("p-alert");
+  const name  = document.getElementById("p-name").value.trim();
+  const desc  = document.getElementById("p-desc").value.trim();
+  const price = document.getElementById("p-price").value;
+  const stock = document.getElementById("p-stock").value;
+  const cat   = document.getElementById("p-cat").value;
+  const img   = document.getElementById("p-img").value.trim();
+  const extraImgsRaw = document.getElementById("p-extra-imgs").value.trim();
+  const video = document.getElementById("p-video").value.trim();
+
+  if (!name || !price) {
+    al.className = "alert alert-error"; al.style.display = "block";
+    al.textContent = "Product name and price are required."; return;
   }
 
-  async function addProduct() {
-    const al    = document.getElementById("p-alert");
-    const name  = document.getElementById("p-name").value.trim();
-    const desc  = document.getElementById("p-desc").value.trim();
-    const price = document.getElementById("p-price").value;
-    const stock = document.getElementById("p-stock").value;
-    const cat   = document.getElementById("p-cat").value;
-    const img   = document.getElementById("p-img").value.trim();
-    const extraImgsRaw = document.getElementById("p-extra-imgs").value.trim();
-    const video = document.getElementById("p-video").value.trim();
+  al.style.display = "none";
 
-    if (!name || !price) {
-      al.className = "alert alert-error"; al.style.display = "block";
-      al.textContent = "Product name and price are required."; return;
-    }
+  const res  = await authFetch("/api/admin/products", {
+    method: "POST",
+    body: JSON.stringify({ name, description: desc, price, stock: stock || 0, category: cat, image_url: img })
+  });
+  const data = await res.json();
 
-    al.style.display = "none";
+  if (!data.productId) {
+    al.className = "alert alert-error"; al.style.display = "block";
+    al.textContent = data.error || "Failed to add product."; return;
+  }
 
-    // 1. Add main product
-    const res  = await authFetch("/api/admin/products", {
-      method: "POST",
-      body: JSON.stringify({ name, description: desc, price, stock: stock || 0, category: cat, image_url: img })
-    });
-    const data = await res.json();
+  const productId = data.productId;
 
-    if (!data.productId) {
-      al.className = "alert alert-error"; al.style.display = "block";
-      al.textContent = data.error || "Failed to add product."; return;
-    }
-
-    const productId = data.productId;
-
-    // 2. Add extra images
-    if (extraImgsRaw) {
-      const urls = extraImgsRaw.split("\n").map(u => u.trim()).filter(u => u.startsWith("http"));
-      for (let i = 0; i < urls.length; i++) {
-        await authFetch(`/api/media/${productId}`, {
-          method: "POST",
-          body: JSON.stringify({ url: urls[i], type: "image", sort_order: i + 1 })
-        });
-      }
-    }
-
-    // 3. Add video
-    if (video) {
+  if (extraImgsRaw) {
+    const urls = extraImgsRaw.split("\n").map(u => u.trim()).filter(u => u.startsWith("http"));
+    for (let i = 0; i < urls.length; i++) {
       await authFetch(`/api/media/${productId}`, {
         method: "POST",
-        body: JSON.stringify({ url: video, type: "video", sort_order: 0 })
+        body: JSON.stringify({ url: urls[i], type: "image", sort_order: i + 1 })
       });
     }
+  }
 
-    // 4. Reset form
-    ["p-name","p-desc","p-price","p-stock","p-img","p-video"].forEach(id => {
-      document.getElementById(id).value = "";
+  if (video) {
+    await authFetch(`/api/media/${productId}`, {
+      method: "POST",
+      body: JSON.stringify({ url: video, type: "video", sort_order: 0 })
     });
-    document.getElementById("p-extra-imgs").value = "";
-    document.getElementById("extra-img-preview").innerHTML = "";
-    document.getElementById("video-preview").style.display = "none";
-    document.getElementById("video-frame").src = "";
-
-    al.className = "alert alert-success"; al.style.display = "block";
-    al.textContent = `✅ Product "${name}" added successfully!`;
-    showToast(`Product "${name}" added!`, "success");
-    loadProducts();
   }
 
-  async function deleteProduct(id) {
-    if (!confirm("Are you sure you want to delete this product? This cannot be undone.")) return;
-    await authFetch(`/api/admin/products/${id}`, { method: "DELETE" });
-    showToast("Product deleted", "success");
-    loadProducts();
-  }
+  ["p-name","p-desc","p-price","p-stock","p-img","p-video"].forEach(id => {
+    document.getElementById(id).value = "";
+  });
+  document.getElementById("p-extra-imgs").value = "";
+  document.getElementById("extra-img-preview").innerHTML = "";
+  document.getElementById("video-preview").style.display = "none";
+  document.getElementById("video-frame").src = "";
+
+  al.className = "alert alert-success"; al.style.display = "block";
+  al.textContent = `✅ Product "${name}" added successfully!`;
+  showToast(`Product "${name}" added!`, "success");
+  loadProducts();
+}
+
+async function deleteProduct(id) {
+  if (!confirm("Are you sure you want to delete this product?")) return;
+  await authFetch(`/api/admin/products/${id}`, { method: "DELETE" });
+  showToast("Product deleted", "success");
+  loadProducts();
+}
 
   // ── Users ─────────────────────────────────────────────────
   async function loadUsers() {

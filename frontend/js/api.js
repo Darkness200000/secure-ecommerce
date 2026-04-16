@@ -1,4 +1,4 @@
-const API = 'https://www.secure-shop.store/api'
+const API = "/api";
 
 // ── Token helpers ──────────────────────────────────────────
 function getToken()   { return localStorage.getItem("token"); }
@@ -62,36 +62,24 @@ async function apiVerifyOTP(otp) {
 
 // ── Page Transition ────────────────────────────────────────
 function navigateTo(url) {
-  // Fade out current page
   document.body.classList.add("page-exit");
-  setTimeout(() => {
-    window.location.href = url;
-  }, 280);
+  setTimeout(() => { window.location.href = url; }, 260);
 }
 
-// Intercept all internal link clicks for smooth transitions
 function initPageTransitions() {
-  // Fade in on page load
   document.body.classList.add("page-enter");
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      document.body.classList.add("page-enter-active");
-    });
-  });
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    document.body.classList.add("page-enter-active");
+  }));
 
-  // Intercept clicks on internal links
   document.addEventListener("click", (e) => {
     const link = e.target.closest("a[href]");
     if (!link) return;
     const href = link.getAttribute("href");
-    // Only intercept internal links (not external, not anchors, not mailto)
     if (
-      href &&
-      !href.startsWith("http") &&
-      !href.startsWith("#") &&
-      !href.startsWith("mailto") &&
-      !href.startsWith("javascript") &&
-      !link.hasAttribute("data-no-transition")
+      href && !href.startsWith("http") && !href.startsWith("#") &&
+      !href.startsWith("mailto") && !href.startsWith("javascript") &&
+      !link.hasAttribute("data-no-transition") && !link.hasAttribute("target")
     ) {
       e.preventDefault();
       navigateTo(href);
@@ -99,153 +87,152 @@ function initPageTransitions() {
   });
 }
 
-// ── Bottom Navigation ──────────────────────────────────────
+// ── Nav render ─────────────────────────────────────────────
 function renderNavbar() {
   const user  = getUser();
   const count = getCartCount();
   const path  = window.location.pathname;
 
-  // Determine active tab
-  const isHome     = path === "/" || path === "/index.html";
+  const isHome     = path === "/" || path.endsWith("index.html");
   const isProducts = path.includes("products");
   const isCart     = path.includes("cart");
   const isOrders   = path.includes("orders");
-  const isAccount  = path.includes("login") || path.includes("register") || path.includes("otp");
+  const isProfile  = path.includes("login") || path.includes("register");
+  const isAdmin_   = path.includes("admin");
+  const isAuth     = path.includes("login") || path.includes("register") || path.includes("otp") || path.includes("forgot");
 
-  // Top navbar (minimal — just logo)
+  // Top bar
   const nav = document.getElementById("navbar");
   if (nav) {
     nav.innerHTML = `
-      <div class="navbar">
-        <a href="/" class="logo" data-no-transition>Secure<span>Shop</span></a>
-        <div class="navbar-right">
-          ${user ? `<span class="navbar-greeting">Hi, ${user.name.split(" ")[0]} 👋</span>` : ""}
-          ${isAdmin() ? `<a href="/pages/admin.html" class="navbar-admin-btn">⚙️ Admin</a>` : ""}
+      <div class="top-bar">
+        <a href="/" class="top-bar-logo" data-no-transition>Secure<span>Shop</span></a>
+        <div class="top-bar-right">
+          ${user ? `<span class="top-bar-greeting">Hi, ${user.name.split(" ")[0]} 👋</span>` : ""}
+          ${isAdmin() ? `<a href="/pages/admin.html" class="top-bar-admin">⚙️ Admin</a>` : ""}
         </div>
       </div>`;
   }
 
-  // Remove existing bottom nav if any
-  const existing = document.getElementById("bottom-nav");
+  // Don't show nav on auth or admin pages
+  const existing = document.getElementById("app-nav");
   if (existing) existing.remove();
+  if (isAuth || isAdmin_) return;
 
-  // Don't show bottom nav on auth pages or admin
-  if (path.includes("admin") || path.includes("login") || path.includes("register") || path.includes("otp")) {
-    return;
-  }
+  const navItems = [
+    { href: "/",                   icon: icons.home,    label: "Home",    active: isHome },
+    { href: "/pages/products.html",icon: icons.shop,    label: "Shop",    active: isProducts },
+    { href: "/pages/cart.html",    icon: icons.cart,    label: "Cart",    active: isCart,   badge: count },
+    ...(user ? [{ href: "/pages/orders.html", icon: icons.orders, label: "Orders", active: isOrders }] : []),
+    { href: user ? "#" : "/pages/login.html",
+      icon: icons.user, label: user ? user.name.split(" ")[0] : "Login",
+      active: isProfile, onclick: user ? "showAccountMenu(event)" : null }
+  ];
 
-  // Create bottom nav
-  const bottomNav = document.createElement("nav");
-  bottomNav.id = "bottom-nav";
-  bottomNav.className = "bottom-nav";
-  bottomNav.innerHTML = `
-    <a href="/" class="bottom-nav-item ${isHome ? "active" : ""}">
-      <span class="bottom-nav-icon">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-          <polyline points="9 22 9 12 15 12 15 22"/>
-        </svg>
-      </span>
-      <span class="bottom-nav-label">Home</span>
-    </a>
+  // Desktop: left sidebar
+  const sidebar = document.createElement("nav");
+  sidebar.id = "app-nav";
+  sidebar.className = "app-nav";
+  sidebar.innerHTML = `
+    <div class="sidebar-nav">
+      <a href="/" class="sidebar-logo" data-no-transition>Secure<span>Shop</span></a>
+      <div class="sidebar-links">
+        ${navItems.map(item => `
+          <a href="${item.href}"
+            class="sidebar-item ${item.active ? "active" : ""}"
+            ${item.onclick ? `onclick="${item.onclick}"` : ""}
+            data-label="${item.label}">
+            <span class="nav-icon">${item.icon}</span>
+            <span class="nav-label">${item.label}</span>
+            ${item.badge > 0 ? `<span class="sidebar-badge">${item.badge}</span>` : ""}
+          </a>
+        `).join("")}
+      </div>
+      ${user ? `
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="sidebar-avatar">${user.name.charAt(0).toUpperCase()}</div>
+          <div class="sidebar-user-info">
+            <div class="sidebar-user-name">${user.name}</div>
+            <button class="sidebar-logout" onclick="logout()">Sign out</button>
+          </div>
+        </div>
+      </div>` : ""}
+    </div>
 
-    <a href="/pages/products.html" class="bottom-nav-item ${isProducts ? "active" : ""}">
-      <span class="bottom-nav-icon">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="2" y="3" width="7" height="7"/>
-          <rect x="15" y="3" width="7" height="7"/>
-          <rect x="15" y="14" width="7" height="7"/>
-          <rect x="2" y="14" width="7" height="7"/>
-        </svg>
-      </span>
-      <span class="bottom-nav-label">Shop</span>
-    </a>
-
-    <a href="/pages/cart.html" class="bottom-nav-item ${isCart ? "active" : ""}">
-      <span class="bottom-nav-icon" style="position:relative;">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="9" cy="21" r="1"/>
-          <circle cx="20" cy="21" r="1"/>
-          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-        </svg>
-        ${count > 0 ? `<span class="bottom-nav-badge">${count}</span>` : ""}
-      </span>
-      <span class="bottom-nav-label">Cart</span>
-    </a>
-
-    ${user ? `
-    <a href="/pages/orders.html" class="bottom-nav-item ${isOrders ? "active" : ""}">
-      <span class="bottom-nav-icon">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-          <polyline points="14 2 14 8 20 8"/>
-          <line x1="16" y1="13" x2="8" y2="13"/>
-          <line x1="16" y1="17" x2="8" y2="17"/>
-          <polyline points="10 9 9 9 8 9"/>
-        </svg>
-      </span>
-      <span class="bottom-nav-label">Orders</span>
-    </a>
-    ` : ""}
-
-    <a href="${user ? "#" : "/pages/login.html"}"
-       class="bottom-nav-item ${isAccount ? "active" : ""}"
-       ${user ? 'onclick="showAccountMenu(event)"' : ""}>
-      <span class="bottom-nav-icon">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-          <circle cx="12" cy="7" r="4"/>
-        </svg>
-      </span>
-      <span class="bottom-nav-label">${user ? user.name.split(" ")[0] : "Login"}</span>
-    </a>
+    <!-- Mobile: floating pill nav -->
+    <div class="float-nav">
+      ${navItems.map(item => `
+        <a href="${item.href}"
+          class="float-item ${item.active ? "active" : ""}"
+          ${item.onclick ? `onclick="${item.onclick}"` : ""}>
+          <span class="float-icon">${item.icon}</span>
+          ${item.badge > 0 ? `<span class="float-badge">${item.badge}</span>` : ""}
+          <span class="float-label">${item.label}</span>
+        </a>
+      `).join("")}
+    </div>
   `;
+  document.body.appendChild(sidebar);
 
-  document.body.appendChild(bottomNav);
-
-  // Add padding to body so content doesn't hide behind bottom nav
-  document.body.style.paddingBottom = "80px";
+  // Add body class for sidebar layout
+  document.body.classList.add("has-sidebar");
 }
 
-// ── Account popup menu ─────────────────────────────────────
+// ── SVG Icons ──────────────────────────────────────────────
+const icons = {
+  home: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
+  shop: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="7" height="7"/><rect x="15" y="3" width="7" height="7"/><rect x="15" y="14" width="7" height="7"/><rect x="2" y="14" width="7" height="7"/></svg>`,
+  cart: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>`,
+  orders:`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`,
+  user: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+};
+
+// ── Account popup ──────────────────────────────────────────
 function showAccountMenu(e) {
   e.preventDefault();
   const existing = document.getElementById("account-popup");
   if (existing) { existing.remove(); return; }
-
   const user = getUser();
   const popup = document.createElement("div");
   popup.id = "account-popup";
   popup.className = "account-popup";
   popup.innerHTML = `
-    <div class="account-popup-header">
-      <div class="account-avatar">${user.name.charAt(0).toUpperCase()}</div>
+    <div class="ap-header">
+      <div class="ap-avatar">${user.name.charAt(0).toUpperCase()}</div>
       <div>
-        <div class="account-name">${user.name}</div>
-        <div class="account-email">${user.email || ""}</div>
+        <div class="ap-name">${user.name}</div>
+        <div class="ap-role">${isAdmin() ? "Admin" : "Customer"}</div>
       </div>
     </div>
-    <div class="account-popup-divider"></div>
-    <a href="/pages/orders.html" class="account-popup-item">
-      📦 My Orders
-    </a>
-    ${isAdmin() ? `<a href="/pages/admin.html" class="account-popup-item">⚙️ Admin Panel</a>` : ""}
-    <div class="account-popup-divider"></div>
-    <button class="account-popup-item account-logout" onclick="logout()">
-      🚪 Logout
-    </button>
+    <div class="ap-divider"></div>
+    <a href="/pages/orders.html" class="ap-item">📦 My Orders</a>
+    ${isAdmin() ? `<a href="/pages/admin.html" class="ap-item">⚙️ Admin Panel</a>` : ""}
+    <div class="ap-divider"></div>
+    <button class="ap-item ap-logout" onclick="logout()">🚪 Sign Out</button>
   `;
   document.body.appendChild(popup);
-
-  // Close on outside click
   setTimeout(() => {
-    document.addEventListener("click", function handler(ev) {
-      if (!popup.contains(ev.target)) {
-        popup.remove();
-        document.removeEventListener("click", handler);
-      }
+    document.addEventListener("click", function h(ev) {
+      if (!popup.contains(ev.target)) { popup.remove(); document.removeEventListener("click", h); }
     });
   }, 10);
+}
+
+// ── Toast ──────────────────────────────────────────────────
+function showToast(msg, type = "") {
+  let c = document.getElementById("toast-root");
+  if (!c) {
+    c = document.createElement("div");
+    c.id = "toast-root";
+    c.className = "toast-container";
+    document.body.appendChild(c);
+  }
+  const t = document.createElement("div");
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => { t.classList.add("hiding"); setTimeout(() => t.remove(), 300); }, 2600);
 }
 
 // ── Alert helpers ──────────────────────────────────────────
@@ -261,7 +248,10 @@ function hideAlert(id) {
   if (el) el.style.display = "none";
 }
 
-// ── Auto-init transitions on every page ───────────────────
+// ── Auto-init ──────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", () => {
   initPageTransitions();
+  window.addEventListener("scroll", () => {
+    document.querySelector(".top-bar")?.classList.toggle("scrolled", window.scrollY > 10);
+  });
 });

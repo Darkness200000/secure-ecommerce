@@ -9,96 +9,129 @@
 <body>
   <div id="navbar"></div>
 
+  <!-- Announcement Ticker -->
+  <div class="ticker-wrap">
+    <div class="ticker-track">
+      <span class="ticker-item">🔐 MFA-protected accounts <span class="sep">✦</span></span>
+      <span class="ticker-item">🚚 Free shipping over $500 <span class="sep">✦</span></span>
+      <span class="ticker-item">🔒 256-bit SSL encryption <span class="sep">✦</span></span>
+      <span class="ticker-item">💳 Secure checkout, zero card storage <span class="sep">✦</span></span>
+      <span class="ticker-item">📱 Latest smartphones in stock <span class="sep">✦</span></span>
+      <span class="ticker-item">🎧 Premium headphones from top brands <span class="sep">✦</span></span>
+      <!-- Duplicate for seamless loop -->
+      <span class="ticker-item">🔐 MFA-protected accounts <span class="sep">✦</span></span>
+      <span class="ticker-item">🚚 Free shipping over $500 <span class="sep">✦</span></span>
+      <span class="ticker-item">🔒 256-bit SSL encryption <span class="sep">✦</span></span>
+      <span class="ticker-item">💳 Secure checkout, zero card storage <span class="sep">✦</span></span>
+      <span class="ticker-item">📱 Latest smartphones in stock <span class="sep">✦</span></span>
+      <span class="ticker-item">🎧 Premium headphones from top brands <span class="sep">✦</span></span>
+    </div>
+  </div>
+
   <!-- Hero -->
   <section class="hero">
-    <div class="hero-badge">✦ <span>New Arrivals</span> just dropped</div>
-    <h1>Shop Electronics<br><span>Securely.</span></h1>
-    <p>Premium smartphones, laptops, headphones & more — protected by military-grade security.</p>
+    <div class="hero-eyebrow"><span class="dot"></span> New arrivals just dropped</div>
+    <h1>The future of<br/><em>secure shopping.</em></h1>
+    <p>Premium electronics with military-grade account protection. Shop confidently, always.</p>
     <div class="hero-cta">
-      <a href="/pages/products.html" class="btn-hero">Shop Now →</a>
-      <a href="/pages/register.html" class="btn-hero-outline">Create Account</a>
+      <a href="/pages/products.html" class="btn-hero">Browse Products →</a>
+      <a href="/pages/register.html" class="btn-hero-ghost">Create Account</a>
     </div>
     <div class="hero-stats">
-      <div class="hero-stat">
-        <div class="value">500+</div>
-        <div class="label">Products</div>
-      </div>
-      <div class="hero-stat">
-        <div class="value">10k+</div>
-        <div class="label">Happy Customers</div>
-      </div>
-      <div class="hero-stat">
-        <div class="value">99.9%</div>
-        <div class="label">Uptime</div>
-      </div>
-      <div class="hero-stat">
-        <div class="value">256-bit</div>
-        <div class="label">Encryption</div>
-      </div>
+      <div class="hero-stat"><div class="val">500+</div><div class="lbl">Products</div></div>
+      <div class="hero-stat"><div class="val">10k+</div><div class="lbl">Customers</div></div>
+      <div class="hero-stat"><div class="val">4.9★</div><div class="lbl">Rating</div></div>
+      <div class="hero-stat"><div class="val">256-bit</div><div class="lbl">Encryption</div></div>
     </div>
   </section>
 
-  <!-- Features -->
+  <!-- Category Chips -->
+  <div class="category-chips">
+    <a href="/pages/products.html" class="cat-chip"><span>📱</span> Smartphones</a>
+    <a href="/pages/products.html" class="cat-chip"><span>💻</span> Laptops</a>
+    <a href="/pages/products.html" class="cat-chip"><span>🎧</span> Headphones</a>
+    <a href="/pages/products.html" class="cat-chip"><span>⌚</span> Smartwatches</a>
+    <a href="/pages/products.html" class="cat-chip"><span>📟</span> Tablets</a>
+  </div>
+
+  <!-- Features Strip -->
   <section class="features-strip">
     <div class="features-grid">
-      <div class="feature-item reveal reveal-delay-1">
-        <div class="feature-icon">🔐</div>
-        <div class="feature-title">MFA Protected</div>
-        <div class="feature-desc">Two-factor login keeps your account safe from unauthorized access.</div>
+      <div class="feat-item reveal reveal-delay-1">
+        <div class="feat-icon">🔐</div>
+        <div class="feat-title">MFA Protected</div>
+        <div class="feat-desc">Two-factor OTP login keeps your account locked tight.</div>
       </div>
-      <div class="feature-item reveal reveal-delay-2">
-        <div class="feature-icon">💳</div>
-        <div class="feature-title">Secure Payments</div>
-        <div class="feature-desc">PCI-DSS compliant. We never store your card details.</div>
+      <div class="feat-item reveal reveal-delay-2">
+        <div class="feat-icon">💳</div>
+        <div class="feat-title">Secure Payments</div>
+        <div class="feat-desc">PCI-DSS compliant. We never store your card details.</div>
       </div>
-      <div class="feature-item reveal reveal-delay-3">
-        <div class="feature-icon">🔒</div>
-        <div class="feature-title">Encrypted Data</div>
-        <div class="feature-desc">SSL/TLS encryption. Passwords hashed with bcrypt.</div>
+      <div class="feat-item reveal reveal-delay-3">
+        <div class="feat-icon">🔒</div>
+        <div class="feat-title">Encrypted Data</div>
+        <div class="feat-desc">SSL/TLS everywhere. Passwords hashed with bcrypt.</div>
       </div>
-      <div class="feature-item reveal reveal-delay-4">
-        <div class="feature-icon">🚚</div>
-        <div class="feature-title">Fast Delivery</div>
-        <div class="feature-desc">Free shipping on orders over $500. Delivered in 3–5 days.</div>
+      <div class="feat-item reveal reveal-delay-4">
+        <div class="feat-icon">🚚</div>
+        <div class="feat-title">Fast Delivery</div>
+        <div class="feat-desc">Free shipping on orders over $500. 3–5 day delivery.</div>
       </div>
     </div>
   </section>
 
-  <!-- Featured Products -->
+  <!-- Featured Products (scroll row) -->
   <section class="section">
     <div class="container">
       <div class="section-header reveal">
         <div>
           <h2 class="section-title">Featured Products</h2>
-          <p class="section-subtitle">Top picks from our electronics collection</p>
+          <p class="section-sub">Hand-picked from our electronics collection</p>
         </div>
         <a href="/pages/products.html" class="section-link">View all →</a>
       </div>
-      <div class="product-grid" id="featured-products">
+      <div class="scroll-row" id="featured-grid">
+        <!-- skeleton -->
+        ${Array(4).fill(0).map(() => `
+          <div style="min-width:220px;border-radius:20px;overflow:hidden;border:1px solid #e8e8e8;flex-shrink:0;">
+            <div class="skeleton" style="height:165px;border-radius:0;"></div>
+            <div style="padding:14px;">
+              <div class="skeleton" style="height:9px;width:35%;margin-bottom:9px;"></div>
+              <div class="skeleton" style="height:13px;width:80%;margin-bottom:7px;"></div>
+              <div class="skeleton" style="height:11px;width:55%;margin-bottom:14px;"></div>
+              <div class="skeleton" style="height:36px;border-radius:999px;"></div>
+            </div>
+          </div>`).join("")}
+      </div>
+    </div>
+  </section>
+
+  <!-- New Arrivals grid -->
+  <section class="section" style="padding-top:0;">
+    <div class="container">
+      <div class="section-header reveal">
+        <div>
+          <h2 class="section-title">New Arrivals</h2>
+          <p class="section-sub">Just landed this week</p>
+        </div>
+        <a href="/pages/products.html" class="section-link">Shop all →</a>
+      </div>
+      <div class="product-grid" id="new-grid">
         <div class="spinner"></div>
       </div>
     </div>
   </section>
 
   <!-- CTA Banner -->
-  <section style="background:var(--text);padding:72px 5%;text-align:center;" class="reveal">
-    <h2 style="color:white;font-size:2rem;font-weight:800;letter-spacing:-0.8px;margin-bottom:12px;">
-      Ready to shop <span style="color:var(--accent)">securely?</span>
-    </h2>
-    <p style="color:rgba(255,255,255,.5);margin-bottom:32px;font-size:1rem;">
-      Create your account and start exploring premium electronics.
-    </p>
-    <a href="/pages/register.html" class="btn-hero" style="background:white;color:var(--text);">
-      Get Started Free →
-    </a>
-  </section>
+  <div class="cta-banner reveal">
+    <h2>Shop with total <em style="color:var(--accent);font-style:normal;">confidence.</em></h2>
+    <p>Your account, data, and payments are protected end-to-end.</p>
+    <a href="/pages/register.html" class="btn-hero">Get Started Free →</a>
+  </div>
 
   <footer class="footer">
-    <p>© 2025 <span>SecureShop</span> — Built with Node.js, MySQL & ❤️</p>
+    <p>© 2026 <span>SecureShop</span> — Trusted Electronics Store</p>
   </footer>
-
-  <!-- Toast container -->
-  <div class="toast-container" id="toast-container"></div>
 
   <script src="/js/cart.js"></script>
   <script src="/js/api.js"></script>
@@ -106,75 +139,87 @@
     renderNavbar();
 
     // Scroll reveal
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }});
-    }, { threshold: 0.12 });
-    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add("visible"); observer.unobserve(e.target); }});
+    }, { threshold: 0.1 });
+    document.querySelectorAll(".reveal").forEach(el => observer.observe(el));
 
-    // Navbar scroll effect
-    window.addEventListener('scroll', () => {
-      document.querySelector('.navbar')?.classList.toggle('scrolled', window.scrollY > 20);
-    });
-
-    // Toast function
-    function showToast(msg, type = '') {
-      const c = document.getElementById('toast-container');
-      const t = document.createElement('div');
-      t.className = `toast ${type}`;
-      t.textContent = msg;
-      c.appendChild(t);
-      setTimeout(() => { t.classList.add('hiding'); setTimeout(() => t.remove(), 300); }, 2500);
-    }
-
-    // Ripple effect for buttons
-    document.addEventListener('click', e => {
-      const btn = e.target.closest('.btn-add');
-      if (!btn) return;
-      const r = document.createElement('span');
+    // Ripple on add-to-cart buttons
+    document.addEventListener("click", e => {
+      const btn = e.target.closest(".btn-add");
+      if (!btn || btn.disabled) return;
+      const r = document.createElement("span");
       const rect = btn.getBoundingClientRect();
       const size = Math.max(rect.width, rect.height);
-      r.className = 'ripple-effect';
+      r.className = "ripple";
       r.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px;`;
       btn.appendChild(r);
       setTimeout(() => r.remove(), 500);
     });
 
-    async function loadFeatured() {
+    function cardHTML(p, i) {
+      return `
+        <div class="product-card reveal reveal-delay-${(i%4)+1}" onclick="openProductModal(${JSON.stringify(p).replace(/"/g,'&quot;')})">
+          <div class="product-card-img">
+            <img src="${p.image_url || 'https://placehold.co/400x300?text=No+Image'}" alt="${p.name}" loading="lazy"/>
+            ${p.stock <= 5 && p.stock > 0 ? `<span class="card-badge low">Only ${p.stock} left</span>` : ""}
+            ${p.stock === 0 ? `<span class="card-badge">Out of Stock</span>` : ""}
+          </div>
+          <div class="card-body">
+            <span class="category">${p.category}</span>
+            <h3>${p.name}</h3>
+            <p class="desc">${p.description ? p.description.slice(0,80)+"…" : ""}</p>
+            <div class="card-footer">
+              <span class="price">$${parseFloat(p.price).toFixed(2)}</span>
+              <span class="stock-badge ${p.stock > 5 ? "stock-in" : p.stock > 0 ? "stock-low" : "stock-out"}">
+                ${p.stock > 5 ? "● In Stock" : p.stock > 0 ? `● ${p.stock} left` : "● Out"}
+              </span>
+            </div>
+            <button class="btn-add" ${p.stock === 0 ? "disabled" : ""}
+              onclick="event.stopPropagation(); addToCart({id:${p.id},name:'${p.name.replace(/'/g,"\\'")}',price:${p.price},image_url:'${p.image_url||""}'}); showToast('Added to cart ✓','success'); renderNavbar();">
+              🛒 Add to Cart
+            </button>
+          </div>
+        </div>`;
+    }
+
+    async function loadHome() {
       try {
-        const res  = await fetch('/api/products');
-        const data = await res.json();
-        const grid = document.getElementById('featured-products');
-        const featured = data.slice(0, 4);
-        if (!featured.length) { grid.innerHTML = '<p class="empty-state">No products found.</p>'; return; }
-        grid.innerHTML = featured.map((p, i) => `
-          <div class="product-card reveal reveal-delay-${i+1}" onclick="window.location='/pages/products.html'">
-            <div class="product-card-img">
-              <img src="${p.image_url || 'https://placehold.co/400x300?text=No+Image'}" alt="${p.name}" loading="lazy"/>
-              ${p.stock <= 5 && p.stock > 0 ? `<span class="card-badge low">Only ${p.stock} left</span>` : ''}
-              ${p.stock === 0 ? `<span class="card-badge">Out of Stock</span>` : ''}
-            </div>
-            <div class="card-body">
-              <span class="category">${p.category}</span>
-              <h3>${p.name}</h3>
-              <p class="desc">${p.description ? p.description.slice(0,80)+'…' : ''}</p>
-              <div class="card-footer">
-                <span class="price">$${parseFloat(p.price).toFixed(2)}</span>
-                <span class="stock-badge ${p.stock > 5 ? 'stock-in' : p.stock > 0 ? 'stock-low' : 'stock-out'}">
-                  ${p.stock > 5 ? '● In Stock' : p.stock > 0 ? `● ${p.stock} left` : '● Out'}
-                </span>
-              </div>
-              <button class="btn-add" ${p.stock === 0 ? 'disabled' : ''}
-                onclick="event.stopPropagation();addToCart({id:${p.id},name:'${p.name.replace(/'/g,"\\'")}',price:${p.price},image_url:'${p.image_url||''}'}); showToast('Added to cart ✓', 'success')">
-                🛒 Add to Cart
-              </button>
-            </div>
-          </div>`).join('');
-        document.querySelectorAll('.product-card.reveal').forEach(el => observer.observe(el));
-      } catch (e) {
-        document.getElementById('featured-products').innerHTML = '<p style="color:red">Failed to load products.</p>';
+        const res = await fetch("/api/products");
+        const all = await res.json();
+        if (!all.length) {
+          document.getElementById("featured-grid").innerHTML = '<p style="color:#a3a3a3;padding:20px;">No products yet.</p>';
+          document.getElementById("new-grid").innerHTML = '<p style="color:#a3a3a3;">No products yet.</p>';
+          return;
+        }
+
+        // Featured: first 6 in scroll row
+        const featured = all.slice(0, 6);
+        const fg = document.getElementById("featured-grid");
+        fg.innerHTML = featured.map((p,i) => {
+          const card = cardHTML(p, i);
+          // Wrap in scroll item
+          return `<div style="min-width:220px;flex-shrink:0;">${card}</div>`;
+        }).join("");
+        fg.querySelectorAll(".reveal").forEach(el => observer.observe(el));
+
+        // New arrivals: next 4 in grid
+        const newer = all.slice(0, 4);
+        const ng = document.getElementById("new-grid");
+        ng.innerHTML = newer.map((p,i) => cardHTML(p,i)).join("");
+        ng.querySelectorAll(".reveal").forEach(el => observer.observe(el));
+
+      } catch(e) {
+        console.error(e);
       }
     }
-    loadFeatured();
+
+    // Quick-view modal (reuse products.html logic here too)
+    function openProductModal(p) {
+      window.location.href = "/pages/products.html";
+    }
+
+    loadHome();
   </script>
 </body>
 </html>

@@ -137,3 +137,81 @@ exports.getProfile = async (req, res) => {
     res.status(500).json({ error: "Could not fetch profile" });
   }
 };
+
+// ── POST /api/auth/forgot-password ─────────────────────────
+// Sends a password-reset OTP to the user's email
+exports.forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: "Email is required" });
+
+  try {
+    const [rows] = await db.query("SELECT * FROM users WHERE email = ?", [email.toLowerCase().trim()]);
+
+    // Always return success to avoid user enumeration
+    if (rows.length === 0) {
+      return res.json({ message: "If that email exists, a reset code has been sent." });
+    }
+
+    const user    = rows[0];
+    const otp     = generateOTP();
+    const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 min for reset
+
+    // Reuse otp_tokens table with a special marker (store in session too)
+    await db.query("DELETE FROM otp_tokens WHERE user_id = ?", [user.id]);
+    await db.query(
+      "INSERT INTO otp_tokens (user_id, otp_code, expires_at) VALUES (?, ?, ?)",
+      [user.id, otp, expires]
+    );
+
+    // Send reset email
+    await sendOTPEmail(user.email, user.name, otp);
+
+    // Store user id in session for the reset step
+    req.session.resetUserId = user.id;
+
+    res.json({ message: "If that email exists, a reset code has been sent." });
+  } catch (err) {
+    console.error("Forgot password error:", err);
+    res.status(500).json({ error: "Something went wrong. Please try again." });
+  }
+};
+
+// ── POST /api/auth/reset-password ──────────────────────────
+// Verifies OTP and sets new password
+exports.resetPassword = async (req, res) => {
+  const { email, otp, newPassword } = req.body;
+
+  if (!email || !otp || !newPassword)
+    return res.status(400).json({ error: "Email, OTP, and new password are required." });
+
+  // Validate password strength
+  const pwReg = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).{8,}$/;
+  if (!pwReg.test(newPassword))
+    return res.status(400).json({ error: "Password must be 8+ characters with uppercase, number, and symbol." });
+
+  try {
+    const [userRows] = await db.query("SELECT * FROM users WHERE email = ?", [email.toLowerCase().trim()]);
+    if (userRows.length === 0)
+      return res.status(404).json({ error: "User not found." });
+
+    const user = userRows[0];
+
+    const [otpRows] = await db.query(
+      "SELECT * FROM otp_tokens WHERE user_id = ? AND otp_code = ? AND expires_at > NOW()",
+      [user.id, otp]
+    );
+    if (otpRows.length === 0)
+      return res.status(401).json({ error: "Invalid or expired reset code." });
+
+    const hashed = await bcrypt.hash(newPassword, SALT_ROUNDS);
+    await db.query("UPDATE users SET password = ? WHERE id = ?", [hashed, user.id]);
+    await db.query("DELETE FROM otp_tokens WHERE user_id = ?", [user.id]);
+
+    if (req.session) req.session.destroy();
+
+    res.json({ message: "Password reset successfully. You can now log in." });
+  } catch (err) {
+    console.error("Reset password error:", err);
+    res.status(500).json({ error: "Password reset failed. Please try again." });
+  }
+};

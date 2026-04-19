@@ -9,7 +9,8 @@ function isAdmin()    { const u = getUser(); return u && u.role === "admin"; }
 function logout() {
   localStorage.removeItem("token");
   localStorage.removeItem("user");
-  navigateTo("/pages/login.html");
+  // Simple redirect — NO body transform so fixed elements stay fixed
+  window.location.href = "/pages/login.html";
 }
 
 // ── Auth fetch ─────────────────────────────────────────────
@@ -60,25 +61,50 @@ async function apiVerifyOTP(otp) {
   return data;
 }
 
-// ── Page Transitions ───────────────────────────────────────
-function navigateTo(url) {
-  document.body.classList.add("page-exit");
-  setTimeout(() => { window.location.href = url; }, 260);
+// ── Page Transition ────────────────────────────────────────
+// KEY FIX: We animate a WRAPPER DIV, NOT the body.
+// body transform breaks position:fixed — so we NEVER touch body transform.
+function navigateTo(href) {
+  const wrapper = document.getElementById("page-wrapper");
+  if (wrapper) {
+    wrapper.style.transition = "opacity 0.22s ease, transform 0.22s ease";
+    wrapper.style.opacity    = "0";
+    wrapper.style.transform  = "translateY(-10px)";
+  }
+  setTimeout(() => { window.location.href = href; }, 230);
 }
 
 function initPageTransitions() {
-  document.body.classList.add("page-enter");
+  // Wrap all body children (except fixed elements) in a div
+  const wrapper = document.createElement("div");
+  wrapper.id = "page-wrapper";
+  wrapper.style.cssText = "opacity:0; transform:translateY(14px); transition:opacity 0.3s ease, transform 0.3s ease;";
+
+  // Move all existing children into wrapper
+  while (document.body.firstChild) {
+    wrapper.appendChild(document.body.firstChild);
+  }
+  document.body.appendChild(wrapper);
+
+  // Trigger fade-in
   requestAnimationFrame(() => requestAnimationFrame(() => {
-    document.body.classList.add("page-enter-active");
+    wrapper.style.opacity   = "1";
+    wrapper.style.transform = "translateY(0)";
   }));
+
+  // Intercept internal link clicks
   document.addEventListener("click", (e) => {
     const link = e.target.closest("a[href]");
     if (!link) return;
     const href = link.getAttribute("href");
     if (
-      href && !href.startsWith("http") && !href.startsWith("#") &&
-      !href.startsWith("mailto") && !href.startsWith("javascript") &&
-      !link.hasAttribute("data-no-transition") && !link.hasAttribute("target")
+      href &&
+      !href.startsWith("http") &&
+      !href.startsWith("#") &&
+      !href.startsWith("mailto") &&
+      !href.startsWith("javascript") &&
+      !link.hasAttribute("data-no-transition") &&
+      !link.hasAttribute("target")
     ) {
       e.preventDefault();
       navigateTo(href);
@@ -88,19 +114,19 @@ function initPageTransitions() {
 
 // ── SVG Icons ──────────────────────────────────────────────
 const icons = {
-  home: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
-  homeFill: `<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>`,
-  shop: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="7" height="7"/><rect x="15" y="3" width="7" height="7"/><rect x="15" y="14" width="7" height="7"/><rect x="2" y="14" width="7" height="7"/></svg>`,
-  shopFill: `<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="2" y="3" width="7" height="7" rx="1"/><rect x="15" y="3" width="7" height="7" rx="1"/><rect x="15" y="14" width="7" height="7" rx="1"/><rect x="2" y="14" width="7" height="7" rx="1"/></svg>`,
-  cart: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>`,
-  cartFill: `<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M7 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm10 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM5.82 6H21l-1.5 9H8L5.82 6zM5.01 2H2v2h2l3.6 7.59L6.25 14C6.09 14.32 6 14.65 6 15c0 1.1.9 2 2 2h12v-2H8.42c-.14 0-.25-.11-.25-.25l.03-.12L9.1 13h7.45c.75 0 1.41-.41 1.75-1.03L21.7 5H5.21l-.2-1H2V6h2.5l.51-4z"/></svg>`,
-  tag: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>`,
-  tagFill: `<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M21.41 11.58l-9-9A2 2 0 0 0 11 2H4a2 2 0 0 0-2 2v7a2 2 0 0 0 .59 1.42l9 9A2 2 0 0 0 13 22a2 2 0 0 0 1.41-.59l7-7A2 2 0 0 0 22 13a2 2 0 0 0-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>`,
-  user: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
-  userFill: `<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`,
-  bot:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="5" r="1" fill="currentColor" stroke="none"/><line x1="8" y1="16" x2="8" y2="16" stroke-width="3"/><line x1="12" y1="16" x2="12" y2="16" stroke-width="3"/><line x1="16" y1="16" x2="16" y2="16" stroke-width="3"/></svg>`,
-  close: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
-  send:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`,
+  home:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
+  homeFill:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>`,
+  shop:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="7" height="7"/><rect x="15" y="3" width="7" height="7"/><rect x="15" y="14" width="7" height="7"/><rect x="2" y="14" width="7" height="7"/></svg>`,
+  shopFill:`<svg viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="3" width="7" height="7" rx="1"/><rect x="15" y="3" width="7" height="7" rx="1"/><rect x="15" y="14" width="7" height="7" rx="1"/><rect x="2" y="14" width="7" height="7" rx="1"/></svg>`,
+  cart:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>`,
+  cartFill:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm10 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-9.83-3.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03L21 5H5.21L4.27 2H1v2h2l3.6 7.59-1.35 2.44C5.09 14.32 5 14.65 5 15c0 1.1.9 2 2 2h12v-2H8.42c-.13 0-.25-.11-.25-.25z"/></svg>`,
+  orders:  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>`,
+  ordersFill:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>`,
+  user:    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+  userFill:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`,
+  bot:     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="5" r="1" fill="currentColor" stroke="none"/><circle cx="8.5" cy="16.5" r="1.5" fill="currentColor" stroke="none"/><circle cx="15.5" cy="16.5" r="1.5" fill="currentColor" stroke="none"/></svg>`,
+  close:   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+  send:    `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>`,
 };
 
 // ── Render Nav ─────────────────────────────────────────────
@@ -116,7 +142,7 @@ function renderNavbar() {
   const isAuth     = path.includes("login") || path.includes("register") || path.includes("otp") || path.includes("forgot");
   const isAdminP   = path.includes("admin");
 
-  // Top bar (mobile only)
+  // Minimal top bar (mobile only — desktop has sidebar)
   const nav = document.getElementById("navbar");
   if (nav) {
     nav.innerHTML = `
@@ -129,27 +155,29 @@ function renderNavbar() {
       </div>`;
   }
 
-  // Clear old nav
+  // Remove old navs
   document.getElementById("ss-sidebar")?.remove();
   document.getElementById("ss-bottomnav")?.remove();
 
   if (isAuth || isAdminP) return;
 
   const navItems = [
-    { href: "/",                    iconOff: icons.home,    iconOn: icons.homeFill,  label: "Home",   active: isHome },
-    { href: "/pages/products.html", iconOff: icons.shop,    iconOn: icons.shopFill,  label: "Shop",   active: isProducts },
-    { href: "/pages/cart.html",     iconOff: icons.cart,    iconOn: icons.cartFill,  label: "Cart",   active: isCart, badge: count },
-    { href: "/pages/orders.html",   iconOff: icons.tag,     iconOn: icons.tagFill,   label: "Orders", active: isOrders, hideWhenLoggedOut: true },
+    { href: "/",                    iconOff: icons.home,    iconOn: icons.homeFill,   label: "Home",   active: isHome },
+    { href: "/pages/products.html", iconOff: icons.shop,    iconOn: icons.shopFill,   label: "Shop",   active: isProducts },
+    { href: "/pages/cart.html",     iconOff: icons.cart,    iconOn: icons.cartFill,   label: "Cart",   active: isCart, badge: count },
+    { href: "/pages/orders.html",   iconOff: icons.orders,  iconOn: icons.ordersFill, label: "Orders", active: isOrders, requireLogin: true },
     {
       href: user ? "#" : "/pages/login.html",
       iconOff: icons.user, iconOn: icons.userFill,
       label: user ? "Account" : "Login",
       active: false,
-      onclick: user ? "showAccountMenu(event)" : null
+      onclick: user ? "showAccountMenu(event)" : null,
     },
-  ].filter(item => !item.hideWhenLoggedOut || user);
+  ].filter(item => !item.requireLogin || user);
 
-  // ── DESKTOP: Left sidebar ──────────────────────────────
+  // ══════════════════════════════════════════════
+  // DESKTOP: Left sidebar — position:fixed
+  // ══════════════════════════════════════════════
   const sidebar = document.createElement("nav");
   sidebar.id = "ss-sidebar";
   sidebar.className = "ss-sidebar";
@@ -163,8 +191,7 @@ function renderNavbar() {
           <span class="ss-nav-icon">${item.active ? item.iconOn : item.iconOff}</span>
           <span class="ss-nav-label">${item.label}</span>
           ${item.badge > 0 ? `<span class="ss-sidebar-badge">${item.badge}</span>` : ""}
-        </a>
-      `).join("")}
+        </a>`).join("")}
     </div>
     ${user ? `
     <div class="ss-sidebar-footer">
@@ -177,9 +204,14 @@ function renderNavbar() {
       </div>
     </div>` : ""}
   `;
+  // Append DIRECTLY to body (not wrapper) so it stays fixed
   document.body.appendChild(sidebar);
 
-  // ── MOBILE: Shop.app style full-width fixed bottom bar ──
+  // ══════════════════════════════════════════════
+  // MOBILE: Full-width fixed bottom nav
+  // Appended to BODY directly — NOT inside page-wrapper
+  // This is the KEY — fixed elements must be direct children of body
+  // ══════════════════════════════════════════════
   const bottomNav = document.createElement("nav");
   bottomNav.id = "ss-bottomnav";
   bottomNav.className = "ss-bottomnav";
@@ -190,8 +222,8 @@ function renderNavbar() {
       <span class="ss-bn-icon">${item.active ? item.iconOn : item.iconOff}</span>
       ${item.badge > 0 ? `<span class="ss-bn-badge">${item.badge}</span>` : ""}
       <span class="ss-bn-label">${item.label}</span>
-    </a>
-  `).join("");
+    </a>`).join("");
+  // Append DIRECTLY to body — never inside page-wrapper
   document.body.appendChild(bottomNav);
 
   document.body.classList.add("has-sidebar");
@@ -259,170 +291,176 @@ function hideAlert(id) {
 }
 
 // ══════════════════════════════════════════════════════════
-// CHATBOT — Enhanced Rule-Based
+// CHATBOT
 // ══════════════════════════════════════════════════════════
 const BOT_RULES = [
-  // Greetings
   {
-    patterns: ["hello","hi","hey","sup","hiya","greetings","good morning","good afternoon","good evening","howdy","yo"],
-    response: "Hey there! 👋 I'm ShopBot, your SecureShop assistant.\n\nI can help you with:\n• 🏷️ Discounts & deals\n• ⚠️ Low stock items\n• 📦 Orders & tracking\n• 🔐 Account & login\n• 🚚 Shipping info\n• 📞 Contact support\n\nWhat can I help you with today?"
+    patterns: ["hello","hi","hey","sup","hiya","greetings","good morning","good afternoon","good evening","howdy","yo","salam","assalam"],
+    response: "Hey there! 👋 I'm ShopBot — your SecureShop assistant!\n\nI can help you with:\n🏷️ Discounts & current deals\n⚠️ Low stock alerts\n📦 Orders & tracking\n🔐 Login & account issues\n🚚 Shipping & delivery\n💳 Payment help\n📞 Contact support\n\nWhat can I help you with? 😊"
   },
   {
-    patterns: ["how are you","how r u","what's up","whats up","you good","doing well"],
-    response: "I'm doing great, thanks for asking! 😊 Ready to help you find deals, track orders, or answer any questions. What do you need?"
+    patterns: ["how are you","you good","doing well","what's up","whats up"],
+    response: "I'm always ready to help! 😄 What can I do for you today?"
   },
-
-  // ── DISCOUNTS & DEALS ──────────────────────────────────
+  // ── DISCOUNTS ──
   {
-    patterns: ["discount","discounts","sale","sales","deal","deals","offer","offers","promo","coupon","code","promocode","special offer","any discount","on sale","reduced","cheaper","save money","bargain"],
-    response: "🏷️ Current Deals at SecureShop!\n\n✅ FREE Shipping on orders over $500\n✅ Bundle deals on headphones + accessories\n✅ Seasonal sales on latest smartphones\n✅ Student discounts available (contact support)\n\nCheck the Shop page and look for items marked with badges — those are our highlighted picks!\n\nWant to know about a specific product's price? Just ask! 😊"
-  },
-  {
-    patterns: ["flash sale","limited time","today only","24 hour","hours left","time limited","hurry"],
-    response: "⚡ Flash Sales & Limited-Time Offers!\n\nWe run occasional flash sales — the best way to catch them is:\n\n1. Check the Shop page regularly\n2. Look for the red 'Only X left' badge on products\n3. Contact us at sugamthapa@my.unt.edu to be added to our deals list!\n\nDon't miss out — some items sell out fast! 🏃"
+    patterns: ["discount","discounts","sale","deal","deals","offer","offers","promo","coupon","code","on sale","reduced","save money","any discount","what discount"],
+    response: "🏷️ Current Deals at SecureShop!\n\n✅ FREE Shipping on orders over $500\n✅ Headphones bundle discounts available\n✅ Latest smartphones — check for seasonal offers\n✅ Student discounts (contact us!)\n\nPro tip: Use Sort by 'Price: Low to High' on Shop page to find the best value items!\n\n📧 For exclusive deals: sugamthapa@my.unt.edu"
   },
   {
-    patterns: ["cheapest","budget","affordable","low price","lowest price","best price","price range","under 100","under 200","under 500"],
-    response: "💰 Looking for budget-friendly options?\n\nYou can sort products by price on our Shop page:\n\n1. Go to Shop page\n2. Use the 'Sort By' filter\n3. Select 'Price: Low to High'\n\nOur most affordable picks start from under $250! Check out our Headphones and Accessories sections for great value. 🎧"
-  },
-
-  // ── LOW STOCK / ENDING SOON ────────────────────────────
-  {
-    patterns: ["low stock","ending soon","almost out","running out","limited stock","few left","going fast","last few","before it's gone","hurry up","sold out soon","out of stock","when restock","restock","available"],
-    response: "⚠️ Items Ending Soon!\n\nOn the Shop page, watch for these badges:\n\n🟡 'Only X left' — Less than 5 units remaining, grab it fast!\n🔴 'Out of Stock' — Currently unavailable\n🟢 'In Stock' — Plenty available\n\nOur fastest-selling items are usually:\n• Latest iPhones & Samsung flagships\n• Sony WH-1000XM headphones\n• Apple Watch Series 9\n• MacBook Air M3\n\nWant to be notified when something is back? Email us at sugamthapa@my.unt.edu 📧"
+    patterns: ["flash sale","limited time","today only","hurry","time limited","24 hours","hours left"],
+    response: "⚡ Flash Sales & Limited Offers!\n\nTo catch flash deals:\n• Check the Shop page regularly\n• Items with 🟡 'Only X left' badge are almost gone!\n• Email sugamthapa@my.unt.edu to join our deals list\n\nSome items sell out within hours — don't wait! 🏃"
   },
   {
-    patterns: ["which item","what item","what product","popular","best seller","top selling","trending","most bought","recommended","suggest","recommendation","hot product","in demand"],
-    response: "🔥 Most Popular Items Right Now!\n\n1. 📱 iPhone 15 Pro — Flying off shelves!\n2. 💻 MacBook Air M3 — Limited units left\n3. 🎧 Sony WH-1000XM5 — Best seller in headphones\n4. ⌚ Apple Watch Series 9 — Very popular\n5. 📱 Samsung Galaxy S24 — High demand\n\nAll marked as 'In Stock' on the Shop page. Grab them before they sell out! 🚀"
-  },
-
-  // ── CONTACT SUPPORT ────────────────────────────────────
-  {
-    patterns: ["contact","support","help","reach","email","phone","customer service","human","agent","representative","talk to someone","speak to","complaint","problem","issue","escalate"],
-    response: "📞 Contact Our Support Team!\n\n📧 Email: sugamthapa@my.unt.edu\n\n⏰ Response Time: 1–2 business days\n\n💬 Or chat with me right here — I'm available 24/7 and can answer most questions instantly!\n\nFor urgent issues, please mention 'URGENT' in your email subject line and we'll prioritize your request. 🙏"
+    patterns: ["cheapest","budget","affordable","low price","best price","under 100","under 200","under 500","cheap"],
+    response: "💰 Budget-Friendly Options!\n\nGo to Shop page → Sort by 'Price: Low to High'\n\nOur most affordable picks:\n🎧 AirPods Pro 2 — $249.99\n🎧 Sony WH-1000XM5 — $349.99\n⌚ Apple Watch — $399.99\n\nAll quality electronics at great prices! 🔥"
   },
   {
-    patterns: ["email support","send email","write email","contact email","support email","email address","how to contact","get in touch"],
-    response: "📧 Our support email is:\n\nsugamthapa@my.unt.edu\n\nPlease include:\n• Your registered email address\n• Order number (if applicable)\n• A brief description of your issue\n\nWe typically respond within 1–2 business days. For faster help, I'm here 24/7! 😊"
+    patterns: ["free shipping","shipping free","no shipping cost","free delivery"],
+    response: "🚚 FREE Shipping!\n\nYou get FREE shipping when your order total is over $500!\n\nOrders under $500 = flat $9.99 shipping fee.\n\nTip: Add multiple items to get past $500 and save on shipping! 😊"
+  },
+  // ── LOW STOCK ──
+  {
+    patterns: ["low stock","ending soon","almost out","running out","limited stock","few left","going fast","last few","before gone","sold out soon","which item end","ending","finish soon","khatam","stock khatam"],
+    response: "⚠️ Items Running Low on Stock!\n\nOn the Shop page, check these badges:\n🟡 'Only X left' = Less than 5 units — grab fast!\n🔴 'Out of Stock' = Gone for now\n🟢 'In Stock' = Plenty available\n\nFastest selling items right now:\n📱 iPhone 15 Pro (very low stock!)\n💻 MacBook Air M3 (limited units)\n🎧 Sony WH-1000XM5 (popular!)\n⌚ Apple Watch Series 9\n\nWant restock alerts? Email: sugamthapa@my.unt.edu 📧"
   },
   {
-    patterns: ["refund","money back","chargeback","dispute","not delivered","wrong item","damaged","broken","return request"],
-    response: "😔 Sorry to hear you're having an issue!\n\nFor refunds or returns:\n\n1. Email us at sugamthapa@my.unt.edu\n2. Include your order number and photos if damaged\n3. We'll process your request within 2–3 business days\n\n📋 Our Policy:\n• Returns accepted within 30 days\n• Item must be in original condition\n• Refunds processed in 5–7 business days\n\nWe want to make it right for you! 💙"
-  },
-
-  // ── OTP & LOGIN ────────────────────────────────────────
-  {
-    patterns: ["otp","one time password","code","verification code","not receiving","didn't receive","no email","resend"],
-    response: "📬 OTP Not Arriving? Here's what to try:\n\n1. ✅ Check spam/junk folder\n2. ✅ Wait 60 seconds then check again\n3. ✅ Make sure you used the correct email\n4. ✅ Click 'Resend code' on the OTP page\n5. ✅ OTPs expire in 5 minutes — enter quickly!\n\nStill not working? Email us at sugamthapa@my.unt.edu with your registered email and we'll help! 🙏"
+    patterns: ["popular","best seller","top","trending","most bought","recommended","hot","in demand","which is best","what should i buy","suggest","suggestion"],
+    response: "🔥 Our Most Popular Products!\n\n1. 📱 iPhone 15 Pro — $999.99 ⭐ Top seller\n2. 🎧 Sony WH-1000XM5 — $349.99 ⭐ Best headphones\n3. 💻 MacBook Air M3 — $1,299.99 ⭐ Best laptop\n4. ⌚ Apple Watch Series 9 — $399.99 ⭐ Hot pick\n5. 📱 Samsung Galaxy S24 — $899.99 ⭐ Android fav\n\nAll available on the Shop page! Don't wait — stock is limited 🚀"
   },
   {
-    patterns: ["forgot password","reset password","can't login","cant login","locked out","lost password","change password","password reset"],
-    response: "🔑 Forgot Your Password?\n\nNo worries! Reset it in 3 easy steps:\n\n1. Go to Login page\n2. Click 'Forgot password?'\n3. Enter your email → get OTP → set new password\n\n⚠️ New password must have:\n• 8+ characters\n• 1 uppercase letter\n• 1 number\n• 1 symbol (!@#$%^&*)\n\nNeed more help? Email sugamthapa@my.unt.edu 📧"
+    patterns: ["new","latest","new arrival","just added","new product","recent","newly added"],
+    response: "✨ New Arrivals!\n\nCheck the 'New Arrivals' section on our Home page for the latest additions!\n\nWe regularly update our inventory with the newest electronics from top brands. Enable notifications by emailing sugamthapa@my.unt.edu to be the first to know! 🔔"
+  },
+  // ── CONTACT ──
+  {
+    patterns: ["contact","support","help","email","phone","customer service","human","agent","talk to someone","speak to","complaint","problem","issue","reach","get in touch","contact email"],
+    response: "📞 Contact Our Support Team!\n\n📧 Email: sugamthapa@my.unt.edu\n\n📝 When emailing, please include:\n• Your registered email\n• Order number (if applicable)\n• Description of your issue\n\n⏰ Response: 1–2 business days\n💬 Or keep chatting with me — I answer instantly! 🤖"
   },
   {
-    patterns: ["register","sign up","create account","new account","join"],
-    response: "🎉 Create Your Free Account!\n\n1. Click Register in the navigation\n2. Enter name, email, and strong password\n3. Password needs: 8+ chars, uppercase, number & symbol\n4. Done! Log in to start shopping\n\nAlready have an account? Just log in — we'll send you a secure OTP to verify it's you! 🔐"
-  },
-  {
-    patterns: ["login","log in","sign in","signin","account access"],
-    response: "🔐 How to Log In:\n\n1. Go to Login page\n2. Enter your email + password\n3. We send a 6-digit OTP to your email\n4. Enter the OTP within 5 minutes\n5. You're in! ✅\n\nThis 2-step login keeps your account ultra-secure. Trouble logging in? Email sugamthapa@my.unt.edu"
-  },
-
-  // ── SECURITY ───────────────────────────────────────────
-  {
-    patterns: ["mfa","2fa","two factor","multi factor","why otp","is it safe","secure","safety","hack","hacked","account security"],
-    response: "🛡️ Your Security is Our #1 Priority!\n\nSecureShop uses Multi-Factor Authentication (MFA):\n• Even if someone gets your password, they can't log in without the OTP sent to YOUR email\n• All data encrypted with HTTPS/SSL 256-bit\n• Passwords hashed with bcrypt (never stored plain)\n• Rate limiting prevents brute-force attacks\n• We NEVER store your card details\n\nYou're in very safe hands! 🔒"
-  },
-
-  // ── PRODUCTS ───────────────────────────────────────────
-  {
-    patterns: ["product","products","electronics","items","catalog","browse","what do you sell","what's available","collection"],
-    response: "🛍️ What We Sell at SecureShop!\n\n📱 Smartphones — iPhone, Samsung Galaxy\n💻 Laptops — MacBook Air, Dell XPS\n🎧 Headphones — Sony, AirPods Pro\n⌚ Smartwatches — Apple Watch\n📟 Tablets — iPad Pro\n\nAll products are premium electronics from top brands!\n\nHead to the Shop page and use filters to find exactly what you're looking for 🔍"
-  },
-  {
-    patterns: ["iphone","apple","macbook","ipad","airpods","apple watch"],
-    response: "🍎 Apple Products at SecureShop!\n\nWe carry:\n• iPhone 15 Pro — $999.99\n• MacBook Air M3 — $1,299.99\n• iPad Pro M4 — $1,099.99\n• AirPods Pro 2 — $249.99\n• Apple Watch Series 9 — $399.99\n\nApple products sell fast! Check the Shop page for current stock levels. Low stock items show a warning badge ⚠️"
-  },
-  {
-    patterns: ["samsung","galaxy","android","dell","xps","sony","headphone","headphones","smartwatch"],
-    response: "🔥 Non-Apple Electronics at SecureShop!\n\n• Samsung Galaxy S24 — $899.99\n• Dell XPS 15 — $1,199.99\n• Sony WH-1000XM5 — $349.99 (our #1 seller!)\n\nHead to Shop → use category filter to browse by type! Each product shows real-time stock so you know what's available 🟢"
-  },
-  {
-    patterns: ["cart","add to cart","basket","bag","checkout"],
-    response: "🛒 Shopping Cart Tips!\n\n• Add items by clicking the product card\n• Your cart saves automatically\n• No login needed to browse — only at checkout\n• Cart icon shows item count in the navigation\n• Free shipping when cart total exceeds $500! 🎉\n\nReady to buy? Go to Cart → Checkout!"
-  },
-
-  // ── SHIPPING ───────────────────────────────────────────
-  {
-    patterns: ["shipping","delivery","how long","when will","arrive","days","free shipping","shipping cost","delivery time"],
-    response: "🚚 Shipping Information!\n\n✅ FREE Shipping — orders over $500\n💰 $9.99 flat rate — orders under $500\n⏱️ Delivery Time — 3 to 5 business days\n\n📦 Track your order:\n1. Log in to your account\n2. Go to 'Orders' page\n3. View status: Pending → Paid → Shipped → Delivered\n\nQuestions about a specific order? Email sugamthapa@my.unt.edu"
-  },
-
-  // ── ORDERS ─────────────────────────────────────────────
-  {
-    patterns: ["order","orders","my orders","track","tracking","order status","where is my order","order history","purchase history"],
-    response: "📦 Track Your Orders!\n\n1. Make sure you're logged in\n2. Click 'Orders' in the navigation\n3. See all orders and their current status\n\n🔄 Order Statuses:\n• ⏳ Pending — order received\n• 💳 Paid — payment confirmed\n• 📦 Shipped — on its way!\n• ✅ Delivered — arrived!\n• ❌ Cancelled — order cancelled\n\nOrder missing? Email sugamthapa@my.unt.edu with your order number!"
+    patterns: ["refund","money back","return","chargeback","not delivered","wrong item","damaged","broken"],
+    response: "😔 Sorry to hear that! Here's how to get help:\n\n📧 Email: sugamthapa@my.unt.edu\nInclude: order number + photos if item is damaged\n\n📋 Return Policy:\n• Returns within 30 days of delivery\n• Item must be in original condition\n• Refunds in 5–7 business days after we receive it\n\nWe'll make it right for you! 💙"
   },
   {
     patterns: ["cancel order","cancel my order","how to cancel","cancellation"],
-    response: "❌ Need to Cancel an Order?\n\nTo cancel:\n1. Go to 'Orders' page\n2. Find the order you want to cancel\n3. If still 'Pending', contact us immediately\n\n⚠️ Orders already 'Shipped' cannot be cancelled — but you can return after delivery.\n\n📧 For fast cancellation: sugamthapa@my.unt.edu\nInclude your order number for faster processing!"
+    response: "❌ Want to Cancel?\n\n• Go to 'Orders' page\n• Find your order\n• If status is 'Pending' — email us immediately!\n\n⚠️ Once 'Shipped' — cannot cancel but you can return after delivery.\n\n📧 Fast cancellation: sugamthapa@my.unt.edu\nMention your order number! ⚡"
   },
-
-  // ── PAYMENT ────────────────────────────────────────────
+  // ── OTP & LOGIN ──
   {
-    patterns: ["payment","pay","credit card","debit card","card","payment method","how to pay","accepted","visa","mastercard"],
-    response: "💳 Payment at SecureShop!\n\n✅ We accept all major cards (Visa, Mastercard, etc.)\n🔒 Demo Mode — no real charges in this version\n🚫 We NEVER store your card details\n✅ SSL encrypted payment form\n\nTo pay:\n1. Add items to cart\n2. Click 'Proceed to Checkout'\n3. Fill shipping + payment details\n4. Place order!\n\nSafe, secure, simple! 🛡️"
-  },
-
-  // ── ABOUT ──────────────────────────────────────────────
-  {
-    patterns: ["about","who made","who are you","what is secureshop","tell me about","final year","student project","university"],
-    response: "🎓 About SecureShop!\n\nSecureShop is a Final Year Computer Science project that demonstrates a real-world, production-grade e-commerce platform.\n\n🔧 Built with:\n• Node.js + Express.js (backend)\n• MySQL (database)\n• HTML/CSS/JS (frontend)\n• JWT + OTP (security)\n\n🌐 Live at: www.secure-shop.store\n\nCreated to showcase full-stack development + cybersecurity best practices! 💪"
-  },
-
-  // ── THANKS ─────────────────────────────────────────────
-  {
-    patterns: ["thank","thanks","thank you","thx","ty","appreciate","great","awesome","perfect","helpful","good job","nice","excellent","love it"],
-    response: "You're very welcome! 😊 Happy I could help!\n\nAnything else I can assist with? Don't hesitate to ask — I'm here 24/7! 🤖"
+    patterns: ["otp","one time password","verification code","not receiving","didn't receive","no email","resend","code not coming","code nahi aya"],
+    response: "📬 OTP Not Arriving? Try these:\n\n1. ✅ Check spam/junk folder first!\n2. ✅ Wait 60 seconds then check again\n3. ✅ Make sure email address is correct\n4. ✅ Click 'Resend code' on the OTP page\n5. ✅ OTP expires in 5 minutes — enter it quickly!\n\nStill stuck? Email: sugamthapa@my.unt.edu 🙏"
   },
   {
-    patterns: ["bye","goodbye","see you","later","cya","exit","close chat","that's all","done","no thanks"],
-    response: "Goodbye! 👋 Happy shopping at SecureShop!\n\nRemember, you can always reach us at sugamthapa@my.unt.edu if you need human support. Take care! 😊"
+    patterns: ["forgot password","reset password","can't login","cant login","locked out","lost password","change password","password nahi yaad","pasword bhol gya"],
+    response: "🔑 Forgot Password? Easy fix!\n\n1. Go to Login page\n2. Click 'Forgot password?'\n3. Enter your email\n4. Get OTP → Enter it\n5. Set new password\n\nNew password must have:\n• 8+ characters\n• 1 uppercase letter (A-Z)\n• 1 number (0-9)\n• 1 symbol (!@#$%^&*)\n\n📧 Still can't access? sugamthapa@my.unt.edu"
   },
   {
-    patterns: ["joke","funny","make me laugh","entertain","bored"],
-    response: "😄 Here's a tech joke for you:\n\nWhy do programmers prefer dark mode?\n\nBecause light attracts bugs! 🐛\n\n...Okay back to shopping! 😂 Is there anything I can help you find?"
+    patterns: ["register","sign up","create account","new account","join","account banana"],
+    response: "🎉 Create Your Free Account!\n\n1. Click Register in the menu\n2. Enter your name, email\n3. Create a strong password\n4. You're in! 🚀\n\nPassword rules:\n✅ 8+ characters\n✅ 1 uppercase\n✅ 1 number\n✅ 1 symbol\n\nAlready have an account? Just log in! 😊"
+  },
+  {
+    patterns: ["login","log in","sign in","how to login","login nahi ho raha","login problem"],
+    response: "🔐 How to Log In:\n\n1. Click 'Login' in the menu\n2. Enter email + password\n3. We send a 6-digit OTP to your email\n4. Enter OTP within 5 minutes\n5. Done! ✅\n\nThis 2-step login keeps your account super secure 🛡️\n\nProblems? Email: sugamthapa@my.unt.edu"
+  },
+  // ── SECURITY ──
+  {
+    patterns: ["mfa","2fa","two factor","secure","safe","security","hack","account safety","why otp","encryption","ssl"],
+    response: "🛡️ Your Security = Our Priority!\n\n✅ Multi-Factor Authentication (MFA) — even with stolen password, no access without OTP\n✅ 256-bit SSL encryption — all data encrypted\n✅ bcrypt password hashing — never stored plain\n✅ Rate limiting — blocks brute force attacks\n✅ Zero card storage — we never keep your card\n\nSecureShop is built security-first! You're in safe hands 🔒"
+  },
+  // ── PRODUCTS ──
+  {
+    patterns: ["product","products","electronics","items","catalog","browse","what do you sell","what's available","collection","kya milta","kya hai"],
+    response: "🛍️ What We Sell!\n\n📱 Smartphones — iPhone 15 Pro, Samsung Galaxy S24\n💻 Laptops — MacBook Air M3, Dell XPS 15\n🎧 Headphones — Sony WH-1000XM5, AirPods Pro 2\n⌚ Smartwatches — Apple Watch Series 9\n📟 Tablets — iPad Pro M4\n\nAll premium electronics from top brands!\nGo to Shop page to browse with filters 🔍"
+  },
+  {
+    patterns: ["iphone","apple","macbook","ipad","airpods","apple watch","mac"],
+    response: "🍎 Apple Products at SecureShop!\n\n📱 iPhone 15 Pro — $999.99\n💻 MacBook Air M3 — $1,299.99\n📟 iPad Pro M4 — $1,099.99\n🎧 AirPods Pro 2 — $249.99\n⌚ Apple Watch Series 9 — $399.99\n\n⚠️ Apple products sell fast — check stock badges on Shop page!"
+  },
+  {
+    patterns: ["samsung","galaxy","android","dell","xps","sony","headphone","headphones","smartwatch","watch"],
+    response: "🔥 Non-Apple Electronics!\n\n📱 Samsung Galaxy S24 — $899.99\n💻 Dell XPS 15 — $1,199.99\n🎧 Sony WH-1000XM5 — $349.99 (🏆 Best seller!)\n\nAll available on Shop page — use category filters to browse! Each product shows real-time stock 🟢"
+  },
+  {
+    patterns: ["cart","add to cart","basket","bag","how to add","cart mein kaise"],
+    response: "🛒 Adding to Cart is Easy!\n\n1. Go to Shop page\n2. Click any product card\n3. View details in the popup\n4. Click 'Add to Cart' button\n5. Cart count updates in the nav!\n\n✅ No login needed to browse\n✅ Login required at checkout\n✅ FREE shipping over $500 🎉"
+  },
+  // ── SHIPPING & ORDERS ──
+  {
+    patterns: ["shipping","delivery","how long","arrive","days","shipping cost","delivery time","kitne din","kab ayega"],
+    response: "🚚 Shipping Info!\n\n✅ FREE — orders over $500\n💰 $9.99 — orders under $500\n⏱️ 3–5 business days delivery\n\nTrack your order:\n1. Log in\n2. Go to 'Orders' page\n3. See live status updates\n\nQuestions? sugamthapa@my.unt.edu 📧"
+  },
+  {
+    patterns: ["order","orders","my orders","track","tracking","order status","where is my order","mera order","order kahan"],
+    response: "📦 Track Your Orders!\n\n1. Log in to your account\n2. Click 'Orders' in the menu\n3. See all orders + status\n\n🔄 Status flow:\n⏳ Pending → 💳 Paid → 📦 Shipped → ✅ Delivered\n\nOrder missing or late? Email: sugamthapa@my.unt.edu with your order number!"
+  },
+  // ── PAYMENT ──
+  {
+    patterns: ["payment","pay","card","credit card","how to pay","payment method","visa","mastercard","payment nahi ho raha"],
+    response: "💳 Payment is Simple & Secure!\n\n✅ All major cards accepted (Visa, Mastercard, etc.)\n🔒 Demo mode — no real charges in this version\n🚫 We NEVER store card details\n✅ SSL encrypted form\n\nCheckout steps:\n1. Cart → Proceed to Checkout\n2. Enter shipping address\n3. Enter card details\n4. Place order! 🎉"
+  },
+  // ── ABOUT ──
+  {
+    patterns: ["about","who made","what is secureshop","final year","student project","university","kaisa project","kis ne banaya"],
+    response: "🎓 About SecureShop!\n\nThis is a Final Year Computer Science project demonstrating a real, production-grade secure e-commerce platform!\n\n🔧 Tech Stack:\n• Node.js + Express (backend)\n• MySQL (database)\n• HTML/CSS/JS (frontend)\n• JWT + OTP = MFA security\n\n🌐 Live at: www.secure-shop.store\n\nBuilt to showcase full-stack + cybersecurity skills! 💪"
+  },
+  // ── FUN ──
+  {
+    patterns: ["joke","funny","make me laugh","bored","entertain","mazak","hasao"],
+    response: "😄 Here's one for you!\n\nWhy do programmers prefer dark mode?\n\nBecause light attracts bugs! 🐛\n\n...Okay okay, back to shopping! 😂 How can I help?"
+  },
+  {
+    patterns: ["thank","thanks","thank you","thx","ty","shukriya","shukria","helpful","great","awesome","perfect"],
+    response: "You're welcome! 😊 Happy to help anytime!\n\nAnything else? I'm here 24/7 🤖"
+  },
+  {
+    patterns: ["bye","goodbye","see you","later","cya","khuda hafiz","allah hafiz","done","that's all"],
+    response: "Goodbye! 👋 Happy shopping at SecureShop!\n\nNeed human support? Email: sugamthapa@my.unt.edu\nTake care! 😊"
+  },
+  // Urdu/Hinglish support
+  {
+    patterns: ["kya hai","kya","samjhao","batao","help karo","help chahiye","madad","mujhe help","kaise"],
+    response: "Bilkul! 😊 Main aapki madad kar sakta hun:\n\n🏷️ Discounts & deals\n⚠️ Low stock items\n📦 Orders track karna\n🔐 Login problems\n🚚 Delivery info\n💳 Payment help\n📞 Support contact\n\nKya jaanna chahte hain? 🙏"
   },
 ];
 
 function getBotResponse(input) {
   const lower = input.toLowerCase().trim();
   for (const rule of BOT_RULES) {
-    if (rule.patterns.some(p => lower.includes(p))) {
-      return rule.response;
-    }
+    if (rule.patterns.some(p => lower.includes(p))) return rule.response;
   }
-  return "Hmm, I'm not quite sure about that one! 🤔\n\nHere's what I can help with:\n🏷️ Discounts & deals\n⚠️ Low stock / ending soon items\n📦 Orders & tracking\n🔐 Account & login issues\n🚚 Shipping info\n💳 Payment help\n📞 Contact support\n\nTry asking about any of those! Or email us at sugamthapa@my.unt.edu for human support 😊";
+  return "Hmm, mujhe yeh samajh nahi aaya! 🤔\n\nMain in topics mein help kar sakta hun:\n🏷️ Discounts / deals\n⚠️ Low stock / ending soon\n📦 Orders & tracking\n🔐 Login / OTP help\n🚚 Shipping info\n💳 Payment\n📞 Contact support\n\nOr email karein: sugamthapa@my.unt.edu 😊";
 }
 
+// ══════════════════════════════════════════════════════════
+// CHATBOT INIT — appended to BODY directly (not wrapper)
+// ══════════════════════════════════════════════════════════
 function initChatbot() {
   if (window.location.pathname.includes("admin")) return;
 
   const bot = document.createElement("div");
   bot.id = "ss-bot";
+
   bot.innerHTML = `
-    <button class="ss-bot-toggle" id="ss-bot-toggle" onclick="toggleBot()" aria-label="Chat with us">
+    <!-- Greeting bubble — appears above toggle button -->
+    <div class="ss-bot-greeting" id="ss-bot-greeting">
+      <button class="ss-bot-greeting-close" onclick="closeGreeting()">×</button>
+      <span>👋 Hi! How can I help you today?</span>
+      <div class="ss-bot-greeting-arrow"></div>
+    </div>
+
+    <!-- Toggle button -->
+    <button class="ss-bot-toggle" id="ss-bot-toggle" onclick="toggleBot()" aria-label="Open chat">
       <span class="ss-bot-toggle-icon" id="ss-bot-icon">${icons.bot}</span>
-      <span class="ss-bot-badge-dot" id="ss-bot-dot"></span>
     </button>
 
+    <!-- Chat window -->
     <div class="ss-bot-window" id="ss-bot-window">
       <div class="ss-bot-header">
         <div class="ss-bot-header-info">
           <div class="ss-bot-avatar">🤖</div>
           <div>
             <div class="ss-bot-name">ShopBot</div>
-            <div class="ss-bot-status"><span class="ss-bot-online-dot"></span>Online — Always here</div>
+            <div class="ss-bot-status"><span class="ss-online-dot"></span> Online — Always here</div>
           </div>
         </div>
         <button class="ss-bot-close" onclick="toggleBot()">${icons.close}</button>
@@ -431,47 +469,57 @@ function initChatbot() {
       <div class="ss-bot-messages" id="ss-bot-messages">
         <div class="ss-bot-msg bot">
           <div class="ss-bot-bubble">
-            Hi! I'm <strong>ShopBot</strong> 🤖<br/><br/>
-            I can help with <strong>deals, low stock alerts, orders, account issues</strong> and more!
+            Hi there! I'm <strong>ShopBot</strong> 🤖<br/><br/>
+            Ask me about <strong>deals, stock, orders, login</strong> or anything else!
           </div>
         </div>
         <div class="ss-bot-quickreplies" id="ss-bot-quick">
           <button onclick="sendQuick('What discounts are available')">🏷️ Discounts</button>
           <button onclick="sendQuick('Which items are ending soon')">⚠️ Low Stock</button>
-          <button onclick="sendQuick('Track my order')">📦 My Orders</button>
+          <button onclick="sendQuick('Track my order')">📦 Orders</button>
           <button onclick="sendQuick('Contact support')">📞 Support</button>
-          <button onclick="sendQuick('Forgot password')">🔑 Password Help</button>
-          <button onclick="sendQuick('Shipping info')">🚚 Shipping</button>
+          <button onclick="sendQuick('Forgot password')">🔑 Password</button>
+          <button onclick="sendQuick('Free shipping')">🚚 Shipping</button>
         </div>
       </div>
 
       <div class="ss-bot-input-row">
         <input type="text" id="ss-bot-input" class="ss-bot-input"
-          placeholder="Ask me anything…" maxlength="200"
+          placeholder="Type your question…" maxlength="200"
           onkeydown="if(event.key==='Enter') sendBotMsg()"/>
         <button class="ss-bot-send" onclick="sendBotMsg()">${icons.send}</button>
       </div>
     </div>
   `;
+
+  // Append directly to body — NEVER inside page-wrapper
   document.body.appendChild(bot);
 
-  // Pulse dot after 4s if not opened yet
+  // Show greeting bubble after 2 seconds if not seen before
   setTimeout(() => {
-    if (!localStorage.getItem("ss-bot-opened")) {
-      document.getElementById("ss-bot-dot")?.classList.add("pulse");
+    const greeting = document.getElementById("ss-bot-greeting");
+    if (greeting && !localStorage.getItem("ss-bot-opened") && !botOpen) {
+      greeting.classList.add("show");
     }
-  }, 4000);
+  }, 2000);
+}
+
+function closeGreeting() {
+  document.getElementById("ss-bot-greeting")?.classList.remove("show");
 }
 
 let botOpen = false;
+
 function toggleBot() {
   botOpen = !botOpen;
-  const win  = document.getElementById("ss-bot-window");
-  const dot  = document.getElementById("ss-bot-dot");
-  const icon = document.getElementById("ss-bot-icon");
+  const win     = document.getElementById("ss-bot-window");
+  const icon    = document.getElementById("ss-bot-icon");
+  const greeting= document.getElementById("ss-bot-greeting");
+
   win.classList.toggle("open", botOpen);
+  greeting?.classList.remove("show");
+
   if (botOpen) {
-    dot?.classList.remove("pulse");
     localStorage.setItem("ss-bot-opened", "1");
     icon.innerHTML = icons.close;
     setTimeout(() => document.getElementById("ss-bot-input")?.focus(), 300);
@@ -495,7 +543,7 @@ function sendBotMsg() {
   document.getElementById("ss-bot-quick")?.remove();
   appendUserMsg(msg);
   const typing = appendTyping();
-  setTimeout(() => { typing.remove(); appendBotMsg(getBotResponse(msg)); }, 650 + Math.random() * 350);
+  setTimeout(() => { typing.remove(); appendBotMsg(getBotResponse(msg)); }, 600 + Math.random() * 400);
 }
 
 function appendUserMsg(text) {
@@ -526,8 +574,8 @@ function appendTyping() {
   return div;
 }
 
-function escapeHtml(str) {
-  return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+function escapeHtml(s) {
+  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 }
 
 // ── Auto-init ──────────────────────────────────────────────

@@ -428,7 +428,7 @@ function getBotResponse(input) {
   for (const rule of BOT_RULES) {
     if (rule.patterns.some(p => lower.includes(p))) return rule.response;
   }
-  return "Hmm, mujhe yeh samajh nahi aaya! 🤔\n\nMain in topics mein help kar sakta hun:\n🏷️ Discounts / deals\n⚠️ Low stock / ending soon\n📦 Orders & tracking\n🔐 Login / OTP help\n🚚 Shipping info\n💳 Payment\n📞 Contact support\n\nOr email karein: sugamthapa@my.unt.edu 😊";
+  return "Didn't quite catch that 🤔\n\nMain in topics mein help kar sakta hun:\n🏷️ Discounts / deals\n⚠️ Low stock / ending soon\n📦 Orders & tracking\n🔐 Login / OTP help\n🚚 Shipping info\n💳 Payment\n📞 Contact support\n\nOr email karein: sugamthapa@my.unt.edu 😊";
 }
 
 // ══════════════════════════════════════════════════════════
